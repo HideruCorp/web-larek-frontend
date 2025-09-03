@@ -38,3 +38,10 @@ export interface IApi {
 	get<T>(uri: string): Promise<T>;
 	post<T>(uri: string, data: object, method?: ApiPostMethods): Promise<T>;
 }
+
+export interface IProductGalleryModel {
+	items: IProduct[]; // массив товаров, геттер и сеттер
+	selection: TypeFrom<IProduct, 'id'> | null; // ID выбранного товара (для работы модального окна с деталями товара)
+
+	getProduct(productId: TypeFrom<IProduct, 'id'>): IProduct | null;
+}

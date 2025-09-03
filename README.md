@@ -99,6 +99,16 @@ interface IOrderResponse {
 }
 ```
 
+Галерея товаров на главной странице - `IProductGalleryModel`:
+
+```ts
+interface IProductGalleryModel {
+    items: IProduct[]; // Массив товаров
+    selection: TypeFrom<IProduct, 'id'> | null; // ID выбранного товара для модального окна
+
+    getProduct(productId: TypeFrom<IProduct, 'id'>): IProduct | null;
+}
+```
 
 ## Архитектура приложения
 
@@ -118,6 +128,21 @@ interface IOrderResponse {
 
 ### Слой данных
 
+#### Класс ProductGalleryModel
+Класс отвечает за управление каталогом товаров и отслеживание выбранного для просмотра товара.
+Конструктор класса принимает экземпляр брокера событий (IEvents) для обеспечения связи с другими компонентами приложения через паттерн Observer.
+
+В полях класса хранятся следующие данные:
+- `_items: IProduct[]` - массив товаров каталога, загруженных с сервера
+- `_selection: TypeFrom<IProduct, 'id'> | null` - UUID выбранного товара для отображения в модальном окне детального просмотра
+- `events: IEvents` - брокер событий для уведомления других компонентов об изменениях
+
+**Основные методы:**
+- `getProduct(productId: TypeFrom<IProduct, 'id'>): IProduct | null` - возвращает товар по его UUID или null, если товар не найден
+- `get items(): IProduct[]` - геттер для получения массива товаров
+- `set items(value: IProduct[])` - сеттер для обновления каталога, генерирует событие `gallery:items_updated`
+- `get selection(): TypeFrom<IProduct, 'id'> | null` - геттер для получения ID выбранного товара
+- `set selection(value: TypeFrom<IProduct, 'id'>) | null` - сеттер для выбора товара, генерирует событие `gallery:selection_changed`
 
 ### Слой представления (View)
 
@@ -148,3 +173,7 @@ interface IOrderResponse {
 ### Презентер
 
 Логика связывания слоев реализована в файле `src/index.ts` через систему событий.
+
+**Основные обработчики событий:**
+- `gallery:items_updated` - перерисовка галереи при загрузке данных
+- `gallery:selection_changed` - отображение выбранного товара в модальном окне
