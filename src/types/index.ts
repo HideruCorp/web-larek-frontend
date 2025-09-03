@@ -50,6 +50,24 @@ export interface IProductViewData extends IProduct {
 	inCart: boolean;
 }
 
+export type TCartItem = Pick<IProduct, 'id' | 'price'>;
+
+export interface ICartModel {
+	items: TypeFrom<IProduct, 'id'>[];
+	totalCost: number;
+	count: number;
+	isEmpty: boolean;
+
+	addProduct(productData: TCartItem): void;
+	removeProduct(productId: TypeFrom<IProduct, 'id'>): void;
+	hasProduct(productId: TypeFrom<IProduct, 'id'>): boolean;
+	clear(): void;
+}
+
+export interface ICartModelConstructor {
+	new (events: IEvents): ICartModel;
+}
+
 export interface IComponent<T = unknown> {
 	render(data?: Partial<T>): HTMLElement;
 }

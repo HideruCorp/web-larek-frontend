@@ -117,6 +117,27 @@ interface IProductViewData extends IProduct {
 }
 ```
 
+Данные товара для корзины - `TCartItem`:
+```ts
+export type TCartItem = Pick<IProduct, 'id' | 'price'>;
+```
+
+Корзина - `ICartModel`:
+
+```ts
+interface ICartModel {
+    items: TypeFrom<IProduct, 'id'>[]; // Массив ID товаров в корзине
+    totalCost: number; // Общая стоимость (вычисляемое поле)
+    count: number; // Количество товаров (вычисляемое поле) 
+    isEmpty: boolean; // Пустая ли корзина (вычисляемое поле)
+
+    addProduct(productData: TCartItem): void; // Добавляет товар с данными о цене
+    removeProduct(productId: TypeFrom<IProduct, 'id'>): void;
+    hasProduct(productId: TypeFrom<IProduct, 'id'>): boolean;
+    clear(): void; // Очистка после успешного заказа
+}
+```
+
 ## Архитектура приложения
 
 Код приложения спроектирован согласно парадигме MVP: 
@@ -150,6 +171,26 @@ interface IProductViewData extends IProduct {
 - `set items(value: IProduct[])` - сеттер для обновления каталога, генерирует событие `gallery:items_updated`
 - `get selection(): TypeFrom<IProduct, 'id'> | null` - геттер для получения ID выбранного товара
 - `set selection(value: TypeFrom<IProduct, 'id'>) | null` - сеттер для выбора товара, генерирует событие `gallery:selection_changed`
+
+#### Класс CartModel
+Класс отвечает за управление корзиной товаров, расчет общей стоимости и уведомление об изменениях.
+
+**Основные поля:**
+- `_items: TCartItem[]` - внутреннее хранилище товаров с ID и ценами
+- `events: IEvents` - брокер событий для уведомления об изменениях
+
+**Основные методы:**
+- `addProduct(productData: TCartItem): void` - добавляет товар в корзину если его там еще нет и товар не бесценный (исключает товары с `price: null`)
+- `removeProduct(productId: TypeFrom<IProduct, 'id'>): void` - удаляет товар из корзины
+- `hasProduct(productId: TypeFrom<IProduct, 'id'>): boolean` - проверяет наличие товара в корзине
+- `clear(): void` - очищает корзину (используется после успешного заказа)
+- `get items(): TypeFrom<IProduct, 'id'>[]` - возвращает массив ID товаров в корзине
+- `get totalCost(): number` - вычисляемое поле общей стоимости
+- `get count(): number` - вычисляемое поле количества товаров
+- `get isEmpty(): boolean` - вычисляемое поле проверки пустоты корзины
+
+**События:**
+- Генерирует `cart:changed` при любом изменении корзины
 
 ### Слой представления (View)
 
@@ -206,6 +247,21 @@ interface IProductViewData extends IProduct {
 **Основные методы:**
 - `render(data?: Partial<IProduct[]>): HTMLElement` - отрисовывает список товаров в галерее
 
+#### Класс Modal
+Компонент модального окна для отображения различного контента.
+
+**Наследуется от:** `Component<IModalData>`
+
+**Основные методы:**
+- `open(): void` - открывает модальное окно
+- `close(): void` - закрывает модальное окно
+- `isOpened(): boolean` - проверяет, открыто ли модальное окно
+- `render(data?: Partial<IModalData>): HTMLElement` - обновляет содержимое модального окна
+
+**Генерируемые события:**
+- `modal:opened` - при открытии модального окна
+- `modal:closed` - при закрытии модального окна
+
 ### Слой коммуникации (API)
 
 #### Класс Api
@@ -251,5 +307,8 @@ interface IProductViewData extends IProduct {
 **Основные обработчики событий:**
 - `product:select` - открытие модального окна с деталями товара
 - `product:action_called` - добавление/удаление товара в корзину
+- `cart:changed` - обновление счетчиков и состояний кнопок
 - `gallery:items_updated` - перерисовка галереи при загрузке данных
 - `gallery:selection_changed` - отображение выбранного товара в модальном окне
+- `modal:closed` - сброс выбранного товара при закрытии модального окна
+- `modal:opened` - уведомление об открытии модального окна

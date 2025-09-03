@@ -12,7 +12,9 @@ import { ProductGalleryModel } from './components/product/ProductGalleryModel';
 import {
 	IProduct,
 	IProductViewData,
+	TCartItem,
 } from './types';
+import { CartModel } from './components/cart/CartModel';
 
 const galleryContainer = ensureElement<HTMLElement>('.gallery');
 const modalElement = ensureElement<HTMLElement>('#modal-container');
@@ -34,11 +36,14 @@ const galleryView = new ProductGalleryView(galleryContainer, events, {
 const modal = new Modal(modalElement, events);
 
 const galleryModel = new ProductGalleryModel(events);
+const cartModel = new CartModel(events);
 
 events.on('product:select', (item: { id: TypeFrom<IProduct, 'id'> }) => {
 	console.log(`Получили клик по элементу с id: ${item.id}`);
 	if (modal.isOpened()) {
-		console.warn('При открытом модальном окне элементы галлереи не кликабельны');
+		console.warn(
+			'При открытом модальном окне элементы галлереи не кликабельны'
+		);
 		return;
 	}
 	galleryModel.selection = item.id;
@@ -46,6 +51,30 @@ events.on('product:select', (item: { id: TypeFrom<IProduct, 'id'> }) => {
 
 events.on('product:action_called', (item: { id: TypeFrom<IProduct, 'id'> }) => {
 	console.log(`Кликнули по кнопке в превью: ${item.id}`);
+	if (!cartModel.hasProduct(item.id)) {
+		const cartItem: TCartItem = galleryModel.getProduct(item.id);
+		cartModel.addProduct(cartItem);
+	} else {
+		cartModel.removeProduct(item.id);
+	}
+});
+
+events.on('cart:changed', () => {
+	console.log(`Изменился список в корзине: ${cartModel.items}`);
+
+	// TODO: Обновить иконку корзины
+
+	// TODO: Обновить вью корзины
+
+	console.log(`Корзина обновилась. selection: ${galleryModel.selection}`);
+	if (galleryModel.selection !== null) {
+		const itemData = {
+			...galleryModel.getProduct(galleryModel.selection),
+			inCart: cartModel.hasProduct(galleryModel.selection),
+		} as IProductViewData;
+		const itemDetailView = itemDetailFactory.build();
+		modal.render({ content: itemDetailView.render(itemData) });
+	}
 });
 
 events.on('modal:close', () => {
@@ -57,7 +86,7 @@ events.on('gallery:selection_changed', () => {
 	if (galleryModel.selection === null) return;
 	const itemData = {
 		...galleryModel.getProduct(galleryModel.selection),
-		inCart: false // Пока нет корзины: cartModel.hasProduct(galleryModel.selection),
+		inCart: cartModel.hasProduct(galleryModel.selection),
 	} as IProductViewData;
 	const itemDetailView = itemDetailFactory.build();
 	modal.render({ content: itemDetailView.render(itemData) });
