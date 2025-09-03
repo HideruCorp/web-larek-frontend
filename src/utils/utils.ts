@@ -12,36 +12,76 @@ export function isEmpty(value: any): boolean {
 
 export type SelectorCollection<T> = string | NodeListOf<Element> | T[];
 
-export function ensureAllElements<T extends HTMLElement>(selectorElement: SelectorCollection<T>, context: HTMLElement = document as unknown as HTMLElement): T[] {
-    if (isSelector(selectorElement)) {
-        return Array.from(context.querySelectorAll(selectorElement)) as T[];
-    }
-    if (selectorElement instanceof NodeList) {
-        return Array.from(selectorElement) as T[];
-    }
-    if (Array.isArray(selectorElement)) {
-        return selectorElement;
-    }
-    throw new Error(`Unknown selector element`);
+export type ClassInstanceType<T> = T extends new (...args: unknown[]) => infer I
+  ? I
+  : T;
+
+export type TypeFrom<T, K extends keyof ClassInstanceType<T>> = ClassInstanceType<T>[K];
+
+export type QueryContext = HTMLElement | Document | DocumentFragment | HTMLTemplateElement;
+
+export function ensureAllElements<T extends HTMLElement>(
+  selectorElement: SelectorCollection<T>, 
+  context?: QueryContext
+): T[] {
+  let searchContext: ParentNode;
+  
+  if (!context) {
+    searchContext = document;
+  } else if (context instanceof HTMLTemplateElement) {
+    searchContext = context.content;
+  } else {
+    searchContext = context;
+  }
+  
+  if (isSelector(selectorElement)) {
+    return Array.from(searchContext.querySelectorAll<T>(selectorElement));
+  }
+  if (selectorElement instanceof NodeList) {
+    return Array.from(selectorElement) as T[];
+  }
+  if (Array.isArray(selectorElement)) {
+    return selectorElement;
+  }
+  throw new Error(`Unknown selector element`);
 }
 
 export type SelectorElement<T> = T | string;
 
-export function ensureElement<T extends HTMLElement>(selectorElement: SelectorElement<T>, context?: HTMLElement): T {
-    if (isSelector(selectorElement)) {
-        const elements = ensureAllElements<T>(selectorElement, context);
-        if (elements.length > 1) {
-            console.warn(`selector ${selectorElement} return more then one element`);
-        }
-        if (elements.length === 0) {
-            throw new Error(`selector ${selectorElement} return nothing`);
-        }
-        return elements.pop() as T;
+export function ensureElement<T extends HTMLElement>(
+  selectorElement: SelectorElement<T>, 
+  context?: QueryContext
+): T {
+  // Нормализуем контекст
+  let searchContext: ParentNode;
+  
+  if (!context) {
+    searchContext = document;
+  } else if (context instanceof HTMLTemplateElement) {
+    searchContext = context.content;
+  } else {
+    searchContext = context;
+  }
+    
+  if (isSelector(selectorElement)) {
+    const elements = Array.from(
+      searchContext.querySelectorAll<T>(selectorElement)
+    );
+    
+    if (elements.length > 1) {
+      console.warn(`selector ${selectorElement} return more then one element`);
     }
-    if (selectorElement instanceof HTMLElement) {
-        return selectorElement as T;
+    if (elements.length === 0) {
+      throw new Error(`selector ${selectorElement} return nothing in context`);
     }
-    throw new Error('Unknown selector element');
+    return elements[0];
+  }
+  
+  if (selectorElement instanceof HTMLElement) {
+    return selectorElement as T;
+  }
+  
+  throw new Error('Unknown selector element');
 }
 
 export function cloneTemplate<T extends HTMLElement>(query: string | HTMLTemplateElement): T {
@@ -81,6 +121,7 @@ export function setElementData<T extends Record<string, unknown> | object>(el: H
 /**
  * Получает типизированные данные из dataset атрибутов элемента
  */
+/* eslint-disable @typescript-eslint/ban-types */
 export function getElementData<T extends Record<string, unknown>>(el: HTMLElement, scheme: Record<string, Function>): T {
     const data: Partial<T> = {};
     for (const key in el.dataset) {
@@ -105,7 +146,7 @@ export function isBoolean(v: unknown): v is boolean {
 /**
  * Фабрика DOM-элементов в простейшей реализации
  * здесь не учтено много факторов
- * в интернет можно найти более полные реализации
+ * в интернете можно найти более полные реализации
  */
 export function createElement<
     T extends HTMLElement

@@ -1,0 +1,40 @@
+import { IEvents } from '../components/base/events';
+import { TypeFrom } from '../utils/utils';
+
+export interface IProduct {
+	id: string; // UUID идентификатор товара
+	title: string; // Название товара
+	description: string; // Подробное описание товара
+	image: string; // Путь к изображению товара (требует CDN_URL)
+	price: number | null; // Цена в синансах или null для бесценных товаров
+	category: string; // Категория товара
+}
+
+export type PaymentMethod = 'online' | 'cash' | '';
+
+export interface IOrderRequest {
+	payment: PaymentMethod; // Способ оплаты
+	address: string; // Адрес доставки (обязательное поле)
+	email: string; // Email покупателя (обязательное поле)
+	phone: string; // Телефон покупателя (обязательное поле)
+	total: number; // Общая сумма заказа (проверяется сервером!)
+	items: TypeFrom<IProduct, 'id'>[]; // Массив UUID товаров из корзины
+}
+
+export interface IOrderResponse {
+	id: string; // Id заказа
+	total: number; // Общая сумма заказа
+}
+
+export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
+
+export type ApiListResponse<Type> = {
+    total: number,
+    items: Type[]
+};
+
+export interface IApi {
+	baseUrl: string;
+	get<T>(uri: string): Promise<T>;
+	post<T>(uri: string, data: object, method?: ApiPostMethods): Promise<T>;
+}
