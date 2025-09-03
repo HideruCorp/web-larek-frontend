@@ -7,6 +7,7 @@ import { ProductViewFactory } from './components/product/ProductViewFactory';
 import { ProductGalleryView } from './components/product/ProductGalleryView';
 import { API_URL, CDN_URL } from './utils/constants';
 import { ensureElement, TypeFrom, cloneTemplate } from './utils/utils';
+import { Modal } from './components/common/Modal';
 import { ProductGalleryModel } from './components/product/ProductGalleryModel';
 import {
 	IProduct,
@@ -14,6 +15,7 @@ import {
 } from './types';
 
 const galleryContainer = ensureElement<HTMLElement>('.gallery');
+const modalElement = ensureElement<HTMLElement>('#modal-container');
 
 const events = new EventEmitter();
 
@@ -21,15 +23,24 @@ const api = new Api(API_URL);
 const larekApi = new LarekApi(api, { cdnUrl: CDN_URL });
 
 const itemCardFactory = new ProductViewFactory('#card-catalog', events);
+const itemDetailFactory = new ProductViewFactory('#card-preview', events, {
+	itemSelectable: false,
+});
 
 const galleryView = new ProductGalleryView(galleryContainer, events, {
 	itemFactory: itemCardFactory,
 });
 
+const modal = new Modal(modalElement, events);
+
 const galleryModel = new ProductGalleryModel(events);
 
 events.on('product:select', (item: { id: TypeFrom<IProduct, 'id'> }) => {
 	console.log(`Получили клик по элементу с id: ${item.id}`);
+	if (modal.isOpened()) {
+		console.warn('При открытом модальном окне элементы галлереи не кликабельны');
+		return;
+	}
 	galleryModel.selection = item.id;
 });
 
@@ -37,8 +48,20 @@ events.on('product:action_called', (item: { id: TypeFrom<IProduct, 'id'> }) => {
 	console.log(`Кликнули по кнопке в превью: ${item.id}`);
 });
 
+events.on('modal:close', () => {
+	galleryModel.selection = null;
+});
+
 events.on('gallery:selection_changed', () => {
 	console.log(`Изменился выбранный товар на ${galleryModel.selection}`);
+	if (galleryModel.selection === null) return;
+	const itemData = {
+		...galleryModel.getProduct(galleryModel.selection),
+		inCart: false // Пока нет корзины: cartModel.hasProduct(galleryModel.selection),
+	} as IProductViewData;
+	const itemDetailView = itemDetailFactory.build();
+	modal.render({ content: itemDetailView.render(itemData) });
+	modal.open();
 });
 
 events.on('gallery:items_updated', () => {

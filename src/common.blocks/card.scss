@@ -12,6 +12,7 @@
   &_full {
     flex-direction: row;
     background-color: transparent;
+    gap: $defaultPadding;
 
     .card__title {
       flex-grow: 0;
@@ -44,6 +45,10 @@
     height: 390px;
     aspect-ratio: 1;
     margin: 3.75rem;
+  }
+
+  &__image--marginless {
+    margin: 0;
   }
 
   &__image--centered {
