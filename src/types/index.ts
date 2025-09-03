@@ -29,8 +29,8 @@ export interface IOrderResponse {
 export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
 
 export type ApiListResponse<Type> = {
-    total: number,
-    items: Type[]
+	total: number;
+	items: Type[];
 };
 
 export interface IApi {
@@ -54,6 +54,10 @@ export interface IComponent<T = unknown> {
 	render(data?: Partial<T>): HTMLElement;
 }
 
+export interface IComponentFactory<T> {
+	build(): IComponent<T>;
+}
+
 export type ProductViewConfig = {
 	itemSelectable: boolean;
 	domSelectors: {
@@ -65,5 +69,9 @@ export type ProductViewConfig = {
 		actionButtonSelector: string;
 	};
 	categoryClassMap: Record<string, string>;
+};
+
+export type ProductGalleryViewConfig = {
+	itemFactory?: IComponentFactory<IProduct>;
 };
 

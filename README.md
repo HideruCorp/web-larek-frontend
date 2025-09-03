@@ -110,6 +110,13 @@ interface IProductGalleryModel {
 }
 ```
 
+Данные товара для отображения в карточке - `IProductViewData`:
+```ts
+interface IProductViewData extends IProduct {
+    inCart: boolean; // Находится ли товар в корзине (приходит из модели корзины ICartModel.hasProduct)
+}
+```
+
 ## Архитектура приложения
 
 Код приложения спроектирован согласно парадигме MVP: 
@@ -147,6 +154,58 @@ interface IProductGalleryModel {
 ### Слой представления (View)
 
 Слой представления отвечает за отображение данных и взаимодействие с пользователем.
+
+#### Интерфейс IComponent<T>
+Основной интерфейс, который реализуют все компоненты представления.
+
+**Методы:**
+- `render(data?: Partial<T>): HTMLElement` - обновляет компонент данными и возвращает DOM элемент
+
+#### Интерфейс IComponentFactory<T>
+Интерфейс фабрики создания компонентов использующийся при отображении коллекций данных.
+
+**Методы:**
+- `build(): IComponent<T>` - создает новый экземпляр компонента - элемента коллекции
+
+#### Базовый класс Component<T>
+Абстрактный класс, от которого наследуются все компоненты представления. Реализует интерфейс `IComponent<T>`.
+
+**Утилитарные методы:**
+- `setText(element: HTMLElement, value: string): void` - установка текстового содержимого
+- `toggleClass(element: HTMLElement, className: string, state?: boolean): void` - переключение CSS классов
+- `setDisabled(element: HTMLElement, state: boolean): void` - установка состояния disabled
+- `setImage(element: HTMLImageElement, src: string, alt?: string): void` - установка изображения
+
+#### Класс ProductView
+Компонент для отображения карточки товара.
+
+**Наследуется от:** `Component<IProductViewData>`
+
+**Принимаемые данные:** Объект типа `IProductViewData` (расширенный `IProduct` с полем `inCart: boolean`)
+
+**Основные сеттеры (protected):**
+- `set id(value: string)` - устанавливает ID товара для использования в событиях
+- `set title(value: string)` - устанавливает название товара
+- `set description(value: string)` - устанавливает описание товара
+- `set image(value: string)` - устанавливает изображение товара
+- `set price(value: number | null)` - устанавливает цену (или "Бесценно")
+- `set category(value: string)` - устанавливает категорию с соответствующим цветом
+- `set inCart(value: Pick<IProductViewData, 'inCart' | 'price'>)` - управляет состоянием кнопки (В корзину/Удалить/Недоступно)
+
+**Основные методы:**
+- `render(data?: Partial<IProductViewData>): HTMLElement` - обновляет компонент данными товара и возвращает DOM элемент
+
+**Генерируемые события:**
+- `product:action_called` - при клике на кнопку действия (Купить/Убрать) а также при нажатии кнопки удаления в корзине
+
+#### Класс ProductGalleryView
+Компонент для отображения галереи товаров на главной странице.
+
+**Наследуется от:** `Component<IProduct[]>`
+
+**Основные методы:**
+- `render(data?: Partial<IProduct[]>): HTMLElement` - отрисовывает список товаров в галерее
+
 ### Слой коммуникации (API)
 
 #### Класс Api
@@ -170,10 +229,27 @@ interface IProductGalleryModel {
 - `GET /product` → `{total: number, items: IProduct[]}` - получение каталога
 - `POST /order` → `{id: string, total: number}` - создание заказа
 
+### Фабрики компонентов
+
+#### Класс ProductViewFactory
+Фабрика для создания компонентов ProductView.
+
+**Реализует интерфейс:** `IComponentFactory<IProductViewData>`
+
+**Конструктор принимает:**
+- `templateSelector: string | HTMLTemplateElement` - селектор или элемент HTML шаблона (например, `#card-catalog`, `#card-preview`)
+- `events?: IEvents` - брокер событий (опционально)
+- `config?: Partial<ProductViewConfig>` - конфигурация компонента (опционально)
+
+**Основные методы:**
+- `build(): IComponent<IProductViewData>` - создает новый экземпляр ProductView на основе указанного шаблона
+
 ### Презентер
 
 Логика связывания слоев реализована в файле `src/index.ts` через систему событий.
 
 **Основные обработчики событий:**
+- `product:select` - открытие модального окна с деталями товара
+- `product:action_called` - добавление/удаление товара в корзину
 - `gallery:items_updated` - перерисовка галереи при загрузке данных
 - `gallery:selection_changed` - отображение выбранного товара в модальном окне
