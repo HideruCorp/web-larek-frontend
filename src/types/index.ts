@@ -45,3 +45,25 @@ export interface IProductGalleryModel {
 
 	getProduct(productId: TypeFrom<IProduct, 'id'>): IProduct | null;
 }
+
+export interface IProductViewData extends IProduct {
+	inCart: boolean;
+}
+
+export interface IComponent<T = unknown> {
+	render(data?: Partial<T>): HTMLElement;
+}
+
+export type ProductViewConfig = {
+	itemSelectable: boolean;
+	domSelectors: {
+		categorySelector: string;
+		titleSelector: string;
+		descriptionSelector: string;
+		imageSelector: string;
+		priceSelector: string;
+		actionButtonSelector: string;
+	};
+	categoryClassMap: Record<string, string>;
+};
+
