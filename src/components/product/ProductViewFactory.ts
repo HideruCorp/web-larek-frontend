@@ -10,6 +10,10 @@ export class ProductViewFactory implements IComponentFactory<IProductViewData> {
     protected config?: Partial<ProductViewConfig>
   ) {}
   
+  buildPlaceholder(): HTMLElement {
+    throw new Error('Плейсхолдер галереи по макету не предусмотрен');
+  }
+
   build(): IComponent<IProductViewData> {
     const container = cloneTemplate<HTMLElement>(this.templateSelector);
     return new ProductView(container, this.events, this.config);

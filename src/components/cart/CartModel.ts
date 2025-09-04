@@ -1,4 +1,4 @@
-import { ICartModel, IProduct, TCartItem } from '../../types';
+import { CartEvent, ICartModel, IProduct, TCartItem } from '../../types';
 import { TypeFrom } from '../../utils/utils';
 import { IEvents } from '../base/events';
 
@@ -54,7 +54,7 @@ export class CartModel implements ICartModel {
     // Проверяем, что товар еще не в корзине и что товар не бесценный
     if (!this.hasProduct(productData.id) && productData.price !== null) {
       this._items.push({ ...productData }); // Создаем копию данных
-      this.events.emit('cart:changed');
+      this.events.emit(CartEvent.ItemsChanged);
     }
   }
 
@@ -68,7 +68,7 @@ export class CartModel implements ICartModel {
     
     if (productIndex !== -1) {
       this._items.splice(productIndex, 1);
-      this.events.emit('cart:changed');
+      this.events.emit(CartEvent.ItemsChanged);
     }
   }
 
@@ -89,7 +89,7 @@ export class CartModel implements ICartModel {
   clear(): void {
     if (!this.isEmpty) {
       this._items = [];
-      this.events.emit('cart:changed');
+      this.events.emit(CartEvent.ItemsChanged);
     }
   }
 }

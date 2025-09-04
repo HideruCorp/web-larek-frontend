@@ -12,6 +12,10 @@
     flex-grow: 1;
   }
 
+  &__placeholder {
+    color: darken($baseFontColor, 70%);
+  }
+
   &__item {
     border-bottom: 1px solid $primary;
     padding: 1.5rem 0;

@@ -24,6 +24,7 @@
     background-color: transparent;
     align-items: center;
     border-radius: 0;
+    gap: calc($defaultPadding / 2);
 
     .card__title {
       flex-grow: 1;

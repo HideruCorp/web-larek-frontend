@@ -1,22 +1,8 @@
+import { IModalData, ModalConfig, ModalEvent } from '../../types';
+import { DEFAULT_MODAL_CONFIG } from '../../utils/constants';
 import { ensureElement } from '../../utils/utils';
 import { Component } from '../base/Component';
 import { IEvents } from '../base/events';
-
-export type ModalConfig = {
-	contentSelector: string;
-	closeButtonSelector: string;
-	openedModifier: string;
-};
-
-const DEFAULT_MODAL_CONFIG: ModalConfig = {
-	contentSelector: '.modal__content',
-	closeButtonSelector: '.modal__close',
-	openedModifier: 'modal_active',
-};
-
-export type IModalData = {
-	content: HTMLElement;
-};
 
 export class Modal extends Component<IModalData> {
 	protected _contentContainer: HTMLElement;
@@ -52,13 +38,13 @@ export class Modal extends Component<IModalData> {
 	open() {
 		this.container.classList.add(this._config.openedModifier);
 		document.addEventListener('keyup', this.handleKeyQuit);
-		this.events.emit('modal:opened');
+		this.events.emit(ModalEvent.Opened);
 	}
 
 	close() {
 		this.container.classList.remove(this._config.openedModifier);
 		document.removeEventListener('keyup', this.handleKeyQuit);
-		this.events.emit('modal:closed');
+		this.events.emit(ModalEvent.Closed);
 	}
 
 	isOpened() {

@@ -1,4 +1,4 @@
-import { IProduct, IProductGalleryModel } from "../../types";
+import { GalleryEvent, IProduct, IProductGalleryModel } from "../../types";
 import { TypeFrom } from "../../utils/utils";
 import { IEvents } from "../base/events";
 
@@ -20,7 +20,7 @@ export class ProductGalleryModel implements IProductGalleryModel {
   }
   public set selection(value: TypeFrom<IProduct, "id">  | null) {
     this._selection = value;
-    this.events.emit("gallery:selection_changed", { id: value });
+    this.events.emit(GalleryEvent.SelectionChanged, { id: value });
   }
   
   get items(): IProduct[] {
@@ -29,7 +29,7 @@ export class ProductGalleryModel implements IProductGalleryModel {
 
   set items(value: IProduct[]) {
     this._items = value;
-    this.events.emit("gallery:items_updated", { id: value });
+    this.events.emit(GalleryEvent.ItemsChanged, { newId: value });
   }
 
   getProduct(productId: TypeFrom<IProduct, "id">): IProduct | null {

@@ -74,7 +74,7 @@ interface IProduct {
 Способ оплаты - `PaymentMethod`:
 
 ```ts
-type PaymentMethod = 'online' | 'cash' | '';
+type PaymentMethod = 'card' | 'cash' | '';
 ```
 
 Заказ для отправки на сервер - `IOrderRequest`:
@@ -90,13 +90,26 @@ interface IOrderRequest {
 }
 ```
 
-Ответ сервера при успешном заказе - `IOrderResponse`:
+Типы ответа сервера при заказе:
 
+Успешный ответ - `TOrderSuccess`:
 ```ts
-interface IOrderResponse {
+type TOrderSuccess = {
     id: string; // UUID созданного заказа
     total: number; // Сумма заказа для отображения
-}
+};
+```
+
+Ошибка заказа - `TOrderError`:
+```ts
+type TOrderError = {
+    error: string; // Сообщение об ошибке
+};
+```
+
+Общий тип ответа - `IOrderResponse`:
+```ts
+type IOrderResponse = TOrderSuccess | TOrderError;
 ```
 
 Галерея товаров на главной странице - `IProductGalleryModel`:
@@ -119,7 +132,7 @@ interface IProductViewData extends IProduct {
 
 Данные товара для корзины - `TCartItem`:
 ```ts
-export type TCartItem = Pick<IProduct, 'id' | 'price'>;
+type TCartItem = Pick<IProduct, 'id' | 'price'>;
 ```
 
 Корзина - `ICartModel`:
@@ -135,6 +148,78 @@ interface ICartModel {
     removeProduct(productId: TypeFrom<IProduct, 'id'>): void;
     hasProduct(productId: TypeFrom<IProduct, 'id'>): boolean;
     clear(): void; // Очистка после успешного заказа
+}
+```
+
+Данные элемента корзины для отображения - `ICartItemData`:
+```ts
+interface ICartItemData extends Pick<IProduct, 'id' | 'title' | 'price'> {
+    cartIndex: number; // Позиция товара в корзине (1, 2, 3...)
+}
+```
+
+Данные корзины для отображения - `ICartViewData`:
+```ts
+interface ICartViewData {
+    items: ICartItemData[]; // Массив товаров корзины с индексами
+    totalCost: number; // Общая стоимость корзины
+    isEmpty: boolean; // Пустая ли корзина
+}
+```
+
+Информация о корзине для иконки - `TCartInfo`:
+```ts
+type TCartInfo = Pick<ICartModel, 'count'>;
+```
+
+Товары для оформления заказа - `TOrderItems`:
+```ts
+type TOrderItems = Pick<IOrderRequest, 'items' | 'total'>;
+```
+
+Данные по оплате и доставке товара при оформлении заказа - `TOrderDelivery`:
+
+```ts
+type TOrderDelivery = Pick<IOrderRequest, 'payment' | 'address'>;
+```
+
+Контактные данные получателя при оформлении заказа - `TOrderContacts`:
+
+```ts
+type TOrderContacts = Pick<IOrderRequest, 'email' | 'phone'>;
+```
+
+События галереи - `GalleryEvent`:
+```ts
+enum GalleryEvent {
+    ItemsChanged = 'gallery:items:changed',
+    SelectionChanged = 'gallery:selection:changed',
+}
+```
+
+События товаров - `ProductEvent`:
+```ts
+enum ProductEvent {
+    CardClicked = 'product:card:clicked',
+    ActionCalled = 'product:action_button:clicked',
+}
+```
+
+События корзины - `CartEvent`:
+```ts
+enum CartEvent {
+    ItemsChanged = 'cart:items:changed',
+    IconClicked = 'cart:icon:clicked',
+    ItemDeleteClicked = 'cart:item:delete_clicked',
+    CheckoutClicked = 'cart:checkout:clicked',
+}
+```
+
+События модального окна - `ModalEvent`:
+```ts
+enum ModalEvent {
+    Opened = 'modal:opened',
+    Closed = 'modal:closed',
 }
 ```
 
@@ -168,9 +253,9 @@ interface ICartModel {
 **Основные методы:**
 - `getProduct(productId: TypeFrom<IProduct, 'id'>): IProduct | null` - возвращает товар по его UUID или null, если товар не найден
 - `get items(): IProduct[]` - геттер для получения массива товаров
-- `set items(value: IProduct[])` - сеттер для обновления каталога, генерирует событие `gallery:items_updated`
+- `set items(value: IProduct[])` - сеттер для обновления каталога, генерирует событие `gallery:items:changed`
 - `get selection(): TypeFrom<IProduct, 'id'> | null` - геттер для получения ID выбранного товара
-- `set selection(value: TypeFrom<IProduct, 'id'>) | null` - сеттер для выбора товара, генерирует событие `gallery:selection_changed`
+- `set selection(value: TypeFrom<IProduct, 'id'>) | null` - сеттер для выбора товара, генерирует событие `gallery:selection:changed`
 
 #### Класс CartModel
 Класс отвечает за управление корзиной товаров, расчет общей стоимости и уведомление об изменениях.
@@ -190,7 +275,8 @@ interface ICartModel {
 - `get isEmpty(): boolean` - вычисляемое поле проверки пустоты корзины
 
 **События:**
-- Генерирует `cart:changed` при любом изменении корзины
+- Генерирует `cart:items:changed` при любом изменении корзины
+
 
 ### Слой представления (View)
 
@@ -207,6 +293,7 @@ interface ICartModel {
 
 **Методы:**
 - `build(): IComponent<T>` - создает новый экземпляр компонента - элемента коллекции
+- `buildPlaceholder(): HTMLElement` - создает элемент-заглушку для пустой коллекции
 
 #### Базовый класс Component<T>
 Абстрактный класс, от которого наследуются все компоненты представления. Реализует интерфейс `IComponent<T>`.
@@ -237,7 +324,7 @@ interface ICartModel {
 - `render(data?: Partial<IProductViewData>): HTMLElement` - обновляет компонент данными товара и возвращает DOM элемент
 
 **Генерируемые события:**
-- `product:action_called` - при клике на кнопку действия (Купить/Убрать) а также при нажатии кнопки удаления в корзине
+- `product:action_button:clicked` - при клике на кнопку действия (Купить/Убрать)
 
 #### Класс ProductGalleryView
 Компонент для отображения галереи товаров на главной странице.
@@ -246,6 +333,61 @@ interface ICartModel {
 
 **Основные методы:**
 - `render(data?: Partial<IProduct[]>): HTMLElement` - отрисовывает список товаров в галерее
+
+#### Класс CartIcon
+Компонент иконки корзины в шапке сайта с счетчиком товаров.
+
+**Наследуется от:** `Component<TCartInfo>`
+
+**Принимаемые данные:** Объект типа `TCartInfo` (содержит `count`)
+
+**Основные сеттеры (protected):**
+- `set count(value: number)` - устанавливает количество товаров в счетчике корзины
+
+**Основные методы:**
+- `render(data?: Partial<TCartInfo>): HTMLElement` - обновляет компонент данными счетчика и возвращает DOM элемент
+
+**Генерируемые события:**
+- `cart:icon:clicked` - при клике на иконку корзины
+
+#### Класс CartItemView
+Компонент для отображения элемента корзины (товара в списке корзины).
+
+**Наследуется от:** `Component<ICartItemData>`
+
+**Принимаемые данные:** Объект типа `ICartItemData` (содержит `id`, `title`, `price`, `cartIndex`)
+
+**Основные сеттеры (protected):**
+- `set id(value: string)` - устанавливает ID товара для использования в событиях
+- `set title(value: string)` - устанавливает название товара
+- `set price(value: number | null)` - устанавливает цену товара
+- `set cartIndex(value: number)` - устанавливает позицию товара в корзине (1, 2, 3...)
+
+**Основные методы:**
+- `render(data?: Partial<ICartItemData>): HTMLElement` - обновляет компонент данными элемента корзины и возвращает DOM элемент
+
+**Генерируемые события:**
+- `cart:item:delete_clicked` - при клике на кнопку удаления товара из корзины
+
+#### Класс CartView
+Компонент для отображения корзины с товарами, общей стоимостью и кнопкой оформления.
+
+**Наследуется от:** `Component<ICartViewData>`
+
+**Принимаемые данные:** Объект типа `ICartViewData` (содержит массив `items`, `totalCost`, `isEmpty`)
+
+**Основные сеттеры (protected):**
+- `set items(cartItems: ICartItemData[])` - устанавливает список товаров корзины. При пустом массиве показывает элемент с текстом "Корзина пуста" (через `itemFactory.buildPlaceholder()`), иначе создает CartItemView для каждого товара
+- `set totalCost(value: number)` - устанавливает общую стоимость корзины
+- `set isEmpty(value: boolean)` - управляет состоянием кнопки оформления (активна только при наличии товаров)
+
+**Основные методы:**
+- `render(data?: Partial<ICartViewData>): HTMLElement` - обновляет компонент данными корзины и возвращает DOM элемент
+
+**Генерируемые события:**
+- `cart:checkout:clicked` - при клике на кнопку "Оформить"
+
+**Конфигурация:** Требует `CartViewConfig` с обязательным `itemFactory` для создания элементов корзины
 
 #### Класс Modal
 Компонент модального окна для отображения различного контента.
@@ -299,16 +441,37 @@ interface ICartModel {
 
 **Основные методы:**
 - `build(): IComponent<IProductViewData>` - создает новый экземпляр ProductView на основе указанного шаблона
+- `buildPlaceholder(): HTMLElement` - создает заглушку (не используется в текущей реализации)
+
+#### Класс CartItemFactory
+Фабрика для создания компонентов CartItemView.
+
+**Реализует интерфейс:** `IComponentFactory<ICartItemData>`
+
+**Конструктор принимает:**
+- `templateSelector: string | HTMLTemplateElement` - селектор или элемент HTML шаблона (`#card-basket`)
+- `events?: IEvents` - брокер событий (опционально)
+- `config?: Partial<CartItemViewConfig>` - конфигурация компонента (опционально)
+
+**Основные методы:**
+- `build(): IComponent<ICartItemData>` - создает новый экземпляр CartItemView на основе шаблона корзины
+- `buildPlaceholder(): HTMLElement` - создает элемент с надписью "Корзина пуста" для отображения в пустой корзине
 
 ### Презентер
 
 Логика связывания слоев реализована в файле `src/index.ts` через систему событий.
 
-**Основные обработчики событий:**
-- `product:select` - открытие модального окна с деталями товара
-- `product:action_called` - добавление/удаление товара в корзину
-- `cart:changed` - обновление счетчиков и состояний кнопок
-- `gallery:items_updated` - перерисовка галереи при загрузке данных
-- `gallery:selection_changed` - отображение выбранного товара в модальном окне
-- `modal:closed` - сброс выбранного товара при закрытии модального окна
-- `modal:opened` - уведомление об открытии модального окна
+## Таблица событий приложения
+
+| Enum поле | Текстовое значение | Источник события | Описание |
+|-----------|-------------------|------------------|----------|
+| **GalleryEvent.ItemsChanged** | `gallery:items:changed` | ProductGalleryModel | Обновление списка товаров в галерее |
+| **GalleryEvent.SelectionChanged** | `gallery:selection:changed` | ProductGalleryModel | Изменение выбранного товара для детального просмотра |
+| **ProductEvent.CardClicked** | `product:card:clicked` | ProductGalleryView | Клик по карточке товара в галерее (выбор для детального просмотра) |
+| **ProductEvent.ActionCalled** | `product:action_button:clicked` | ProductView | Клик по кнопке действия с товаром (добавить/убрать из корзины) |
+| **CartEvent.ItemsChanged** | `cart:items:changed` | CartModel | Изменение содержимого корзины (добавление/удаление товаров) |
+| **CartEvent.IconClicked** | `cart:icon:clicked` | CartIcon | Клик по иконке корзины в шапке сайта |
+| **CartEvent.ItemDeleteClicked** | `cart:item:delete_clicked` | CartItemView | Клик по кнопке удаления товара из корзины |
+| **CartEvent.CheckoutClicked** | `cart:checkout:clicked` | CartView | Клик по кнопке "Оформить" в корзине |
+| **ModalEvent.Opened** | `modal:opened` | Modal | Открытие модального окна |
+| **ModalEvent.Closed** | `modal:closed` | Modal | Закрытие модального окна |

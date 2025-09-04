@@ -13,11 +13,22 @@ import {
 	IProduct,
 	IProductViewData,
 	TCartItem,
+	ICartItemData,
+	ICartViewData,
+	TOrderItems,
+	ProductEvent,
+	GalleryEvent,
+	ModalEvent,
+	CartEvent,
 } from './types';
 import { CartModel } from './components/cart/CartModel';
+import { CartView } from './components/cart/CartView';
+import { CartIcon } from './components/cart/CartIcon';
+import { CartItemFactory } from './components/cart/CartItemFactory';
 
 const galleryContainer = ensureElement<HTMLElement>('.gallery');
 const modalElement = ensureElement<HTMLElement>('#modal-container');
+const cartIconElement = ensureElement<HTMLElement>('.header__basket');
 
 const events = new EventEmitter();
 
@@ -38,33 +49,61 @@ const modal = new Modal(modalElement, events);
 const galleryModel = new ProductGalleryModel(events);
 const cartModel = new CartModel(events);
 
-events.on('product:select', (item: { id: TypeFrom<IProduct, 'id'> }) => {
-	console.log(`Получили клик по элементу с id: ${item.id}`);
-	if (modal.isOpened()) {
-		console.warn(
-			'При открытом модальном окне элементы галлереи не кликабельны'
-		);
-		return;
-	}
-	galleryModel.selection = item.id;
+const cartIcon = new CartIcon(cartIconElement, events);
+
+const cartItemFactory = new CartItemFactory('#card-basket', events);
+const cartContainer = cloneTemplate<HTMLElement>('#basket');
+const cartView = new CartView(cartContainer, events, {
+	itemFactory: cartItemFactory,
 });
 
-events.on('product:action_called', (item: { id: TypeFrom<IProduct, 'id'> }) => {
-	console.log(`Кликнули по кнопке в превью: ${item.id}`);
-	if (!cartModel.hasProduct(item.id)) {
-		const cartItem: TCartItem = galleryModel.getProduct(item.id);
-		cartModel.addProduct(cartItem);
-	} else {
-		cartModel.removeProduct(item.id);
+events.on(
+	ProductEvent.CardClicked,
+	(item: { id: TypeFrom<IProduct, 'id'> }) => {
+		console.log(`Получили клик по элементу с id: ${item.id}`);
+		if (modal.isOpened()) {
+			console.warn(
+				'При открытом модальном окне элементы галлереи не кликабельны'
+			);
+			return;
+		}
+		galleryModel.selection = item.id;
 	}
-});
+);
 
-events.on('cart:changed', () => {
+events.on(
+	ProductEvent.ActionCalled,
+	(item: { id: TypeFrom<IProduct, 'id'> }) => {
+		console.log(`Кликнули по кнопке в превью: ${item.id}`);
+		if (!cartModel.hasProduct(item.id)) {
+			const cartItem: TCartItem = galleryModel.getProduct(item.id);
+			cartModel.addProduct(cartItem);
+		} else {
+			cartModel.removeProduct(item.id);
+		}
+	}
+);
+
+events.on(CartEvent.ItemsChanged, () => {
 	console.log(`Изменился список в корзине: ${cartModel.items}`);
 
-	// TODO: Обновить иконку корзины
+	cartIcon.render({ count: cartModel.count });
 
-	// TODO: Обновить вью корзины
+	const cartItems: ICartItemData[] = cartModel.items.map((productId, index) => {
+		const product = galleryModel.getProduct(productId);
+		return {
+			...product,
+			cartIndex: index + 1,
+		} as ICartItemData;
+	});
+
+	const cartData: ICartViewData = {
+		items: cartItems,
+		totalCost: cartModel.totalCost,
+		isEmpty: cartModel.isEmpty,
+	};
+
+	cartView.render(cartData);
 
 	console.log(`Корзина обновилась. selection: ${galleryModel.selection}`);
 	if (galleryModel.selection !== null) {
@@ -77,11 +116,55 @@ events.on('cart:changed', () => {
 	}
 });
 
-events.on('modal:close', () => {
+events.on(CartEvent.IconClicked, () => {
+	console.log('Открываем корзину');
+	if (modal.isOpened()) {
+		console.warn('Модальное окно уже занято');
+		return;
+	}
+	galleryModel.selection = null;
+
+	const cartItems: ICartItemData[] = cartModel.items.map((productId, index) => {
+		const product = galleryModel.getProduct(productId);
+		return {
+			...product,
+			cartIndex: index + 1,
+		} as ICartItemData;
+	});
+
+	const cartData: ICartViewData = {
+		items: cartItems,
+		totalCost: cartModel.totalCost,
+		isEmpty: cartModel.isEmpty,
+	};
+
+	modal.render({ content: cartView.render(cartData) });
+	modal.open();
+});
+
+events.on(CartEvent.CheckoutClicked, () => {
+	console.log('Переходим к оформлению заказа');
+
+	// Подготавливаем данные заказа из корзины
+	const orderData: TOrderItems = {
+		items: cartModel.items,
+		total: cartModel.totalCost,
+	};
+});
+
+events.on(
+	CartEvent.ItemDeleteClicked,
+	(item: { id: TypeFrom<IProduct, 'id'> }) => {
+		console.log(`Удаляем товар из корзины: ${item.id}`);
+		cartModel.removeProduct(item.id);
+	}
+);
+
+events.on(ModalEvent.Closed, () => {
 	galleryModel.selection = null;
 });
 
-events.on('gallery:selection_changed', () => {
+events.on(GalleryEvent.SelectionChanged, () => {
 	console.log(`Изменился выбранный товар на ${galleryModel.selection}`);
 	if (galleryModel.selection === null) return;
 	const itemData = {
@@ -93,7 +176,7 @@ events.on('gallery:selection_changed', () => {
 	modal.open();
 });
 
-events.on('gallery:items_updated', () => {
+events.on(GalleryEvent.ItemsChanged, () => {
 	console.log(`Список товаров обновился. Обновим галерею...`);
 	galleryView.render(galleryModel.items);
 });

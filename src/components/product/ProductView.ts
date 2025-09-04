@@ -1,4 +1,4 @@
-import { IProductViewData, ProductViewConfig } from '../../types';
+import { IProductViewData, ProductEvent, ProductViewConfig } from '../../types';
 import { DEFAULT_ITEM_VIEW_CONFIG } from '../../utils/constants';
 import { ensureElement, formatPrice } from '../../utils/utils';
 import { Component } from '../base/Component';
@@ -58,7 +58,7 @@ export class ProductView extends Component<IProductViewData> {
 		if (this._config.itemSelectable) {
 			this.container.addEventListener('click', () => {
 				if (this._productId) {
-					this.events?.emit('product:select', { id: this._productId });
+					this.events?.emit(ProductEvent.CardClicked, { id: this._productId });
 				}
 			});
 		}
@@ -67,7 +67,7 @@ export class ProductView extends Component<IProductViewData> {
 			this._addToCartButton.addEventListener('click', (evt) => {
 				evt.stopPropagation();
 				if (this._productId) {
-					this.events?.emit('product:action_called', {
+					this.events?.emit(ProductEvent.ActionCalled, {
 						id: this._productId,
 					});
 				}
