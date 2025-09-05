@@ -8,6 +8,7 @@ import {
 	IOrderResponse,
 	FieldValidity,
 	ValidityState,
+	TOrderParameters,
 } from '../../types';
 import { validateFields } from '../../utils/validation';
 import { pick } from '../../utils/utils';
@@ -17,34 +18,15 @@ const PaymentMethodSchema = v.union(
 	'Необходимо выбрать вариант оплаты'
 );
 
-const IOrderRequestSchema = v.object({
+const TOrderParametersSchema = v.object({
 	payment: PaymentMethodSchema,
 	address: v.pipe(v.string(), v.nonEmpty('Необходимо указать адрес')),
-	email: v.pipe(
-		v.string(),
-		v.nonEmpty('Необходимо указать email'),
-		v.email('Указанный email некорректен')
-	),
-	phone: v.pipe(
-		v.string(),
-		v.nonEmpty('Необходимо указать номер телефона'),
-		v.regex(
-			/^([+]?[0-9\s-()]{3,25})*$/i,
-			'Указанный номер телефона некорректен'
-		)
-	),
-	total: v.pipe(
-		v.number(),
-		v.notValue(0, 'Стоимость не может быть равна нулю')
-	),
-	items: v.pipe(
-		v.array(v.pipe(v.string(), v.uuid())),
-		v.nonEmpty('Корзина пуста')
-	),
+	email: v.pipe(v.string(), v.nonEmpty('Необходимо указать email')),
+	phone: v.pipe(v.string(), v.nonEmpty('Необходимо указать номер телефона')),
 });
 
 export class OrderModel implements IOrderModel {
-	protected _orderData: IOrderRequest;
+	protected _orderData: TOrderParameters;
 	private _orderResponse: IOrderResponse | null;
 	protected _currentStep: OrderStep = OrderStep.Cart;
 
@@ -52,7 +34,7 @@ export class OrderModel implements IOrderModel {
 		this.reset();
 	}
 
-	get orderData(): IOrderRequest {
+	get orderParameters(): TOrderParameters {
 		return { ...this._orderData };
 	}
 
@@ -83,24 +65,23 @@ export class OrderModel implements IOrderModel {
 		}
 	}
 
-	setOrderData(step: OrderStep, data: Partial<IOrderRequest>): void {
+	setOrderParameters(data: Partial<TOrderParameters>): void {
 		const updatedData = { ...this._orderData, ...data };
-		const validity = this.validateData(step, updatedData);
+		const validity = this.validate(data);
 		if (!validity.some((el) => el.state === ValidityState.Invalid)) {
 			this._orderData = updatedData;
 			this.events.emit(OrderEvent.DataChanged, { data: this._orderData });
-			this.currentStep = step;
 		} else {
 			this.events.emit(OrderEvent.ValidationFailed, validity);
 		}
 	}
 
-	validate(data: Partial<IOrderRequest>, strict = false): FieldValidity[] {
-		return validateFields(IOrderRequestSchema, data, strict);
+	validate(data: Partial<TOrderParameters>, strict = false): FieldValidity[] {
+		return validateFields(TOrderParametersSchema, data, strict);
 	}
 
 	submitStep(): void {
-		const validity = this.validateData(this.currentStep, this.orderData);
+		const validity = this.validateData(this.currentStep, this.orderParameters);
 		if (
 			validity.some(
 				(field) =>
@@ -119,7 +100,10 @@ export class OrderModel implements IOrderModel {
 				this.currentStep = OrderStep.Contacts;
 				break;
 			case OrderStep.Contacts:
-				this.events.emit(OrderEvent.SubmitOrderTransaction, this.orderData);
+				this.events.emit(
+					OrderEvent.SubmitOrderTransaction,
+					this.orderParameters
+				);
 				this.currentStep = OrderStep.SendingOrder;
 				break;
 			case OrderStep.SendingOrder:
@@ -130,8 +114,6 @@ export class OrderModel implements IOrderModel {
 
 	reset(): OrderStep {
 		this._orderData = {
-			items: [],
-			total: 0,
 			payment: '',
 			address: '',
 			email: '',
@@ -147,12 +129,8 @@ export class OrderModel implements IOrderModel {
 		data: Partial<IOrderRequest>
 	): FieldValidity[] {
 		const validity: FieldValidity[] = [];
-		if (step in [OrderStep.SendingOrder, OrderStep.Success]) return validity;
-
-		// Валидация товаров в корзине
-		if (step in [OrderStep.Cart, OrderStep.Delivery, OrderStep.Contacts]) {
-			validity.push(...this.validate(pick(data, 'items', 'total'), true));
-		}
+		if (step in [OrderStep.Cart, OrderStep.SendingOrder, OrderStep.Success])
+			return validity;
 
 		// Валидация способа оплаты и адреса
 		if (step in [OrderStep.Delivery, OrderStep.Contacts]) {

@@ -82,10 +82,10 @@ type PaymentMethod = 'card' | 'cash' | '';
 ```ts
 interface IOrderRequest {
     payment: PaymentMethod; // Способ оплаты
-    address: string; // Адрес доставки (обязательное поле)
-    email: string; // Email покупателя (обязательное поле)
-    phone: string; // Телефон покупателя (обязательное поле)
-    total: number; // Общая сумма заказа (проверяется сервером!)
+    address: string; // Адрес доставки
+    email: string; // Email покупателя
+    phone: string; // Телефон покупателя
+    total: number; // Общая сумма заказа
     items: TypeFrom<IProduct, 'id'>[]; // Массив UUID товаров из корзины
 }
 ```
@@ -182,13 +182,23 @@ type TCartInfo = Pick<ICartModel, 'count'>;
 
 Типы данных для конкретных шагов оформления заказа:
 - Товары для оформления заказа - `TOrderItems`
+- Параметры заказа без товаров и суммы - `TOrderParameters`
 - Данные по оплате и доставке товара при оформлении заказа - `TOrderDelivery`
 - Контактные данные получателя при оформлении заказа - `TOrderContacts`
 
 ```ts
 type TOrderItems = Pick<IOrderRequest, 'items' | 'total'>;
+type TOrderParameters = Omit<IOrderRequest, 'items' | 'total'>;
 type TOrderDelivery = Pick<IOrderRequest, 'payment' | 'address'>;
 type TOrderContacts = Pick<IOrderRequest, 'email' | 'phone'>;
+```
+
+Тип для события изменения полей формы заказа - `TOrderChangeRequest`:
+
+```ts
+type TOrderChangeRequest = {
+    changedData: Partial<TOrderParameters>; // Изменившиеся поля
+};
 ```
 
 Шаги оформления заказа - `OrderStep`:
@@ -198,7 +208,7 @@ enum OrderStep {
     Cart = 'cart',           // Корзина, процесс оформления не начат
     Delivery = 'delivery',   // Выбор способа оплаты и адреса доставки
     Contacts = 'contacts',   // Ввод контактных данных
-    SendingOrder = 'sending', // Отправка на API сервера (без визуального отображения)
+    SendingOrder = 'sending', // Отправка на API сервера
     Success = 'success'      // Успешное завершение заказа
 }
 ```
@@ -242,7 +252,7 @@ enum ModalEvent {
 ```ts
 enum ValidityState {
     Invalid = 'invalid',     // При переходе в след шаг поле заполнено некорректно
-    Incomplete = 'incomplete', // Поле заполнено некорректно (при реактивной валидации, ошибку не показываем)
+    Incomplete = 'incomplete', // Поля частично заполнены
     Valid = 'valid',         // Поле корректно заполнено
 }
 ```
@@ -271,7 +281,7 @@ type FormData<T> = T & {
 enum OrderEvent {
     StepChanged = 'order:step:changed',           // Изменение текущего шага заказа
     DataChanged = 'order:request:changed',        // Обновление данных заказа
-    ValidateRequest = 'order:request:validate',   // Запрос валидации данных
+    ChangeRequest = 'order:form:change',          // Запрос изменения поля формы заказа
     ValidationFailed = 'order:validation:failed', // Ошибки валидации
     OrderFailed = 'order:response:received',      // Ошибка при оформлении заказа
     SubmitOrderTransaction = 'order:transaction:submit', // Отправка заказа
@@ -284,16 +294,15 @@ enum OrderEvent {
 
 ```ts
 interface IOrderModel {
-    // Данные заказа
-    orderData: IOrderRequest; // геттер
-    orderResponse: IOrderResponse | null; // геттер, сеттер
+    orderParameters: TOrderParameters;
+    orderResponse: IOrderResponse | null;
     currentStep: OrderStep; // геттер
 
     // Методы для работы с данными
-    setOrderData(step: OrderStep, data: Partial<IOrderRequest>): void;
+    setOrderParameters(data: Partial<TOrderParameters>): void;
 
     // Валидация
-    validate(data: Partial<IOrderRequest>, strict: boolean): FieldValidity[];
+    validate(data: Partial<TOrderParameters>): FieldValidity[];
 
     // Управление шагами
     submitStep(): void;
@@ -356,38 +365,37 @@ interface IOrderModel {
 - Генерирует `cart:items:changed` при любом изменении корзины
 
 #### Класс OrderModel
-Класс отвечает за управление процессом оформления заказа, валидацию данных и пошаговое заполнение формы заказа. Использует библиотеку valibot для валидации.
+Класс отвечает за управление процессом оформления заказа, валидацию параметров формы и пошаговое заполнение. Использует библиотеку valibot для валидации.
 
 **Основные поля:**
-- `_orderData: IOrderRequest` - данные заказа (полная структура)
+- `_orderData: TOrderParameters` - параметры формы заказа
 - `_orderResponse: IOrderResponse | null` - ответ сервера после отправки заказа
 - `_currentStep: OrderStep` - текущий шаг процесса оформления
 - `events: IEvents` - брокер событий для уведомления об изменениях
 
 **Основные методы:**
-- `setOrderData(step: OrderStep, data: Partial<IOrderRequest>): void` - устанавливает данные заказа для конкретного шага с валидацией
-- `validate(data: Partial<IOrderRequest>, strict: boolean): FieldValidity[]` - валидирует поля с помощью valibot схем. Не применяет их на модель 
+- `setOrderParameters(data: Partial<TOrderParameters>): void` - устанавливает параметры заказа с валидацией, обновляет только валидные или неполные поля
+- `validate(data: Partial<TOrderParameters>): FieldValidity[]` - валидирует параметры с помощью valibot схем
 - `submitStep(): void` - переход к следующему шагу с валидацией текущего
-- `reset(): OrderStep` - сброс всех данных заказа и возврат к начальному шагу
-- `get orderData(): IOrderRequest` - геттер для получения копии данных заказа
+- `reset(): OrderStep` - сброс всех параметров заказа и возврат к начальному шагу
+- `get orderParameters(): TOrderParameters` - геттер для получения копии параметров заказа
 - `get/set orderResponse(): IOrderResponse | null` - геттер/сеттер для ответа сервера
 - `get/set currentStep(): OrderStep` - геттер/сеттер для текущего шага
 
 **Валидация с использованием valibot схем:**
 - **PaymentMethodSchema**: проверяет выбор способа оплаты ('card' или 'cash')
-- **IOrderRequestSchema**: полная схема валидации всего заказа
+- **TOrderParametersSchema**: схема валидации параметров формы (без товаров и суммы)
 - **Поэтапная валидация**: различные поля проверяются в зависимости от текущего шага
-- **Строгая валидация**: при `strict: true` требует заполнения всех полей
 
 **Логика работы с шагами:**
-- `Cart` -> `Delivery`: проверяет наличие товаров
+- `Cart` -> `Delivery`: переход инициируется презентером
 - `Delivery` -> `Contacts`: проверяет способ оплаты и адрес
-- `Contacts` -> `SendingOrder`: проверяет контактные данные и отправляет транзакцию
+- `Contacts` -> `SendingOrder`: проверяет контактные данные и отправляет событие транзакции
 - `SendingOrder` -> `Success`: автоматический переход при успешном ответе
 
 **События:**
 - `OrderEvent.StepChanged` - при изменении текущего шага
-- `OrderEvent.DataChanged` - при обновлении данных заказа
+- `OrderEvent.DataChanged` - при валидном обновлении параметров заказа
 - `OrderEvent.ValidationFailed` - при ошибках валидации (передает массив `FieldValidity[]`)
 - `OrderEvent.SubmitOrderTransaction` - при готовности отправить заказ на сервер
 - `OrderEvent.OrderFailed` - при получении ошибки от сервера
@@ -518,6 +526,54 @@ interface IOrderModel {
 
 **Конфигурация:** Требует `CartViewConfig` с обязательным `itemFactory` для создания элементов корзины
 
+#### Класс OrderDeliveryView
+Компонент для первого шага оформления заказа - выбор способа оплаты и адреса доставки.
+
+**Наследуется от:** `Component<FormData<TOrderDelivery>>`
+
+**Принимаемые данные:** Объект типа `FormData<TOrderDelivery>` (содержит `payment`, `address`, `validity`)
+
+**Основные сеттеры (protected):**
+- `set payment(value: PaymentMethod)` - устанавливает активный способ оплаты (card/cash)
+- `set address(value: string)` - устанавливает адрес доставки в поле ввода
+- `set validity(validity: FieldValidity[])` - отображает ошибки валидации и управляет состоянием кнопки "Далее"
+
+**Основные методы:**
+- `render(data?: Partial<FormData<TOrderDelivery>>): HTMLElement` - обновляет компонент данными шага доставки и возвращает DOM элемент
+
+**Принцип работы:**
+- **Реактивные события**: при изменении каждого поля отправляется `OrderEvent.ChangeRequest` с измененными данными
+- **Никаких геттеров**: компонент не читает состояние полей, только отправляет события об изменениях
+- **Валидация через модель**: получает результаты валидации из модели через презентер
+
+**Генерируемые события:**
+- `order:form:change` - при изменении способа оплаты или адреса (отправляет `TOrderChangeRequest`)
+- `order:step:submit` - при клике на кнопку "Далее"
+
+#### Класс OrderContactsView
+Компонент для второго шага оформления заказа - ввод контактных данных (email и телефон).
+
+**Наследуется от:** `Component<FormData<TOrderContacts>>`
+
+**Принимаемые данные:** Объект типа `FormData<TOrderContacts>` (содержит `email`, `phone`, `validity`)
+
+**Основные сеттеры (protected):**
+- `set email(value: string)` - устанавливает email в поле ввода
+- `set phone(value: string)` - устанавливает телефон в поле ввода
+- `set validity(validity: FieldValidity[])` - отображает ошибки валидации и управляет состоянием кнопки "Оплатить"
+
+**Основные методы:**
+- `render(data?: Partial<FormData<TOrderContacts>>): HTMLElement` - обновляет компонент данными контактов и возвращает DOM элемент
+
+**Принцип работы:**
+- **Реактивные события**: при изменении каждого поля отправляется `OrderEvent.ChangeRequest` с измененными данными
+- **Никаких геттеров**: компонент не читает состояние полей, только отправляет события об изменениях
+- **Валидация через модель**: получает результаты валидации из модели через презентер
+
+**Генерируемые события:**
+- `order:form:change` - при изменении email или телефона (отправляет `TOrderChangeRequest`)
+- `order:step:submit` - при клике на кнопку "Оплатить"
+
 #### Класс OrderSuccessView
 Компонент экрана успешного оформления заказа.
 
@@ -622,9 +678,9 @@ interface IOrderModel {
 | **ModalEvent.Closed** | `modal:closed` | Modal | Закрытие модального окна |
 | **OrderEvent.StepChanged** | `order:step:changed` | OrderModel | Изменение текущего шага процесса оформления заказа |
 | **OrderEvent.DataChanged** | `order:request:changed` | OrderModel | Обновление данных заказа (адрес, контакты и т.д.) |
-| **OrderEvent.ValidateRequest** | `order:request:validate` | OrderModel | Запрос валидации данных |
+| **OrderEvent.ChangeRequest** | `order:form:change` | OrderDeliveryView, OrderContactsView | Запрос изменения поля формы заказа (отправляет `TOrderChangeRequest`) |
 | **OrderEvent.ValidationFailed** | `order:validation:failed` | OrderModel | Ошибки валидации при заполнении данных заказа |
 | **OrderEvent.OrderFailed** | `order:response:received` | OrderModel | Ошибка при оформлении заказа (в ответе от API) |
 | **OrderEvent.SubmitOrderTransaction** | `order:transaction:submit` | OrderModel | Отправка заказа на сервер |
-| **OrderEvent.SubmitStep** | `order:step:submit` | OrderModel | Запрос перехода на следующий шаг заказа |
+| **OrderEvent.SubmitStep** | `order:step:submit` | OrderDeliveryView, OrderContactsView | Запрос перехода на следующий шаг заказа |
 | **OrderEvent.SuccessClose** | `order:success:close_clicked` | OrderSuccessView | Клик по кнопке закрытия экрана успешного заказа |

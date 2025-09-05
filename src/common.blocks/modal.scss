@@ -17,10 +17,6 @@
     display: flex;
   }
 
-  body:has(&_active) {
-    overflow: hidden;
-  }
-
   &__container {
     @include mixins.container;
     @include mixins.flex(column);

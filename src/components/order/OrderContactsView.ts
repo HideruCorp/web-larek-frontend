@@ -4,7 +4,6 @@ import {
 	TOrderContacts,
 	FormData,
 	OrderEvent,
-	OrderStep,
 	OrderContactsViewConfig,
 	FieldValidity,
 	ValidityState,
@@ -59,50 +58,22 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 	 */
 	protected _setupEventListeners(): void {
 		// Реактивная валидация при вводе данных
-		this._emailInput.addEventListener('input', this._handleValidate.bind(this));
-		this._phoneInput.addEventListener('input', this._handleValidate.bind(this));
+		this._emailInput.addEventListener('input', () => {
+			this.events.emit(OrderEvent.ChangeRequest, {
+				changedData: { email: this._emailInput.value },
+			});
+		});
+		this._phoneInput.addEventListener('input', () => {
+			this.events.emit(OrderEvent.ChangeRequest, {
+				changedData: { phone: this._phoneInput.value },
+			});
+		});
 
 		// Обработка кнопки "Оплатить"
 		this._formElement.addEventListener('submit', (e) => {
 			e.preventDefault();
-			this._handleSubmit();
+			this.events.emit(OrderEvent.SubmitStep);
 		});
-	}
-
-	protected _handleValidate(): void {
-		this.validity = [];
-
-		this.events?.emit(OrderEvent.ValidateRequest, {
-			step: OrderStep.Contacts,
-			data: this._getFormData(),
-		});
-	}
-
-	protected _getFormData(): TOrderContacts {
-		const orderData: TOrderContacts = {
-			email: this.email,
-			phone: this.phone,
-		};
-		return orderData;
-	}
-
-	/**
-	 * Обработка отправки формы
-	 */
-	protected _handleSubmit(): void {
-		this.validity = [];
-
-		this.events?.emit(OrderEvent.SubmitStep, {
-			step: OrderStep.Contacts,
-			data: this._getFormData(),
-		});
-	}
-
-	/**
-	 * Получение email
-	 */
-	protected get email(): string {
-		return this._emailInput.value;
 	}
 
 	/**
@@ -110,13 +81,6 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 	 */
 	protected set email(value: string) {
 		this._emailInput.value = value;
-	}
-
-	/**
-	 * Получение телефона
-	 */
-	protected get phone(): string {
-		return this._phoneInput.value;
 	}
 
 	/**

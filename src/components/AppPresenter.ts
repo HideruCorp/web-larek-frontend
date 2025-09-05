@@ -25,6 +25,7 @@ import {
 	TOrderDelivery,
 	TOrderError,
 	TOrderSuccess,
+	TOrderChangeRequest,
 	ValidityState,
 } from '../types';
 import { IEvents } from './base/events';
@@ -165,11 +166,7 @@ export class AppPresenter {
 		});
 
 		this.events.on(CartEvent.CheckoutClicked, () => {
-			this.orderModel.setOrderData(OrderStep.Cart, {
-				items: this.cartModel.items,
-				total: this.cartModel.totalCost,
-			});
-			this.orderModel.submitStep();
+			this.orderModel.currentStep = OrderStep.Delivery;
 		});
 
 		this.events.on(
@@ -184,13 +181,13 @@ export class AppPresenter {
 			switch (data.step) {
 				case OrderStep.Delivery: {
 					const orderDelivery = pick(
-						this.orderModel.orderData,
+						this.orderModel.orderParameters,
 						'payment',
 						'address'
 					);
 					const deliveryData = {
 						...orderDelivery,
-						validity: this.orderModel.validate(orderDelivery, false),
+						validity: this.orderModel.validate(orderDelivery),
 					};
 					this.modal.render({
 						content: this.orderDeliveryView.render(deliveryData),
@@ -200,13 +197,13 @@ export class AppPresenter {
 
 				case OrderStep.Contacts: {
 					const orderContacts = pick(
-						this.orderModel.orderData,
+						this.orderModel.orderParameters,
 						'email',
 						'phone'
 					);
 					const contactsData = {
 						...orderContacts,
-						validity: this.orderModel.validate(orderContacts, false),
+						validity: this.orderModel.validate(orderContacts),
 					};
 					this.modal.render({
 						content: this.orderContactsView.render(contactsData),
@@ -229,29 +226,22 @@ export class AppPresenter {
 			}
 		});
 
-		this.events.on(
-			OrderEvent.ValidateRequest,
-			(req: { step: OrderStep; data: Partial<IOrderRequest> }) => {
-				const validity = this.orderModel.validate(req.data);
-				if (req.step === OrderStep.Delivery) {
-					this.orderDeliveryView.render({ validity });
-				} else if (req.step === OrderStep.Contacts) {
-					this.orderContactsView.render({ validity });
-				}
-			}
-		);
+		this.events.on(OrderEvent.ChangeRequest, (req: TOrderChangeRequest) => {
+			this.orderModel.setOrderParameters(req.changedData);
+		});
 
-		this.events.on(
-			OrderEvent.SubmitStep,
-			(data: { step: OrderStep; data: Partial<IOrderRequest> }) => {
-				this.orderModel.setOrderData(data.step, data.data);
-				this.orderModel.submitStep();
-			}
-		);
+		this.events.on(OrderEvent.SubmitStep, () => {
+			this.orderModel.submitStep();
+		});
 
 		this.events.on(OrderEvent.SubmitOrderTransaction, () => {
+			const orderRequest: IOrderRequest = {
+				...this.orderModel.orderParameters,
+				items: this.cartModel.items,
+				total: this.cartModel.totalCost,
+			};
 			this.larekApi
-				.sendOrder(this.orderModel.orderData)
+				.sendOrder(orderRequest)
 				.then((response) => {
 					this.orderModel.orderResponse = response;
 				})
@@ -261,7 +251,6 @@ export class AppPresenter {
 		});
 
 		this.events.on(OrderEvent.ValidationFailed, (validity: FieldValidity[]) => {
-
 			if (this.orderModel.currentStep === OrderStep.Delivery) {
 				this.orderDeliveryView.render({ validity });
 			} else if (this.orderModel.currentStep === OrderStep.Contacts) {
@@ -273,7 +262,7 @@ export class AppPresenter {
 			switch (this.orderModel.currentStep) {
 				case OrderStep.Delivery: {
 					const orderDelivery = pick(
-						this.orderModel.orderData,
+						this.orderModel.orderParameters,
 						'payment',
 						'address'
 					);
@@ -286,7 +275,7 @@ export class AppPresenter {
 
 				case OrderStep.Contacts: {
 					const orderDelivery = pick(
-						this.orderModel.orderData,
+						this.orderModel.orderParameters,
 						'email',
 						'phone'
 					);

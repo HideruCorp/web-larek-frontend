@@ -5,7 +5,6 @@ import {
 	FormData,
 	PaymentMethod,
 	OrderEvent,
-	OrderStep,
 	OrderDeliveryViewConfig,
 	FieldValidity,
 	ValidityState,
@@ -18,7 +17,10 @@ import { DEFAULT_ORDER_DELIVERY_CONFIG } from '../../utils/constants';
  * Наследуется от базового Component и работает с типом TOrderDelivery.
  */
 export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
-	protected _config: Pick<OrderDeliveryViewConfig, 'paymentMethodMapping' | 'activeButtonModifier'>;
+	protected _config: Pick<
+		OrderDeliveryViewConfig,
+		'paymentMethodMapping' | 'activeButtonModifier'
+	>;
 	protected _formElement: HTMLFormElement;
 	protected _paymentButtons: HTMLButtonElement[];
 	protected _addressInput: HTMLInputElement;
@@ -69,17 +71,18 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 				const paymentMethod = this._config.paymentMethodMapping.find(
 					(el) => el.name === btn.getAttribute('name')
 				)?.method;
-				this.payment = paymentMethod;
-
-				this._handleValidate();
+				this.events.emit(OrderEvent.ChangeRequest, {
+					changedData: { payment: paymentMethod },
+				});
 			});
 		});
 
 		// Реактивная валидация при вводе адреса
-		this._addressInput.addEventListener(
-			'input',
-			this._handleValidate.bind(this)
-		);
+		this._addressInput.addEventListener('input', () => {
+			this.events.emit(OrderEvent.ChangeRequest, {
+				changedData: { address: this._addressInput.value },
+			});
+		});
 
 		// Обработка кнопки "Далее"
 		this._formElement.addEventListener('submit', (e) => {
@@ -88,48 +91,13 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 		});
 	}
 
-	protected _handleValidate(): void {
-		this.validity = [];
-
-		this.events?.emit(OrderEvent.ValidateRequest, {
-			step: OrderStep.Delivery,
-			data: this._getFormData(),
-		});
-	}
-
-	protected _getFormData(): TOrderDelivery {
-		const orderData: TOrderDelivery = {
-			payment: this.payment,
-			address: this.address,
-		};
-		return orderData;
-	}
-
 	/**
 	 * Обработка отправки формы
 	 */
 	protected _handleSubmit(): void {
 		this.validity = [];
 
-		this.events?.emit(OrderEvent.SubmitStep, {
-			step: OrderStep.Delivery,
-			data: this._getFormData(),
-		});
-	}
-
-	/**
-	 * Получение способа оплаты
-	 */
-	protected get payment(): PaymentMethod {
-		const activeButton = this._paymentButtons.find((btn) =>
-			btn.classList.contains(this._config.activeButtonModifier)
-		);
-		if (!activeButton) return '';
-		return (
-			this._config.paymentMethodMapping.find(
-				(el) => el.name === activeButton.getAttribute('name')
-			)?.method || ''
-		);
+		this.events?.emit(OrderEvent.SubmitStep);
 	}
 
 	/**
@@ -146,13 +114,6 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 				value === btnPaymentMethod
 			);
 		});
-	}
-
-	/**
-	 * Получение адреса доставки
-	 */
-	protected get address(): string {
-		return this._addressInput.value;
 	}
 
 	/**

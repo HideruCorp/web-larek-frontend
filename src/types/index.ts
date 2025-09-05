@@ -5,7 +5,7 @@ export interface IProduct {
 	id: string; // UUID идентификатор товара
 	title: string; // Название товара
 	description: string; // Подробное описание товара
-	image: string; // Путь к изображению товара (требует CDN_URL)
+	image: string; // Путь к изображению товара
 	price: number | null; // Цена в синансах или null для бесценных товаров
 	category: string; // Категория товара
 }
@@ -14,11 +14,11 @@ export type PaymentMethod = 'card' | 'cash' | '';
 
 export interface IOrderRequest {
 	payment: PaymentMethod; // Способ оплаты
-	address: string; // Адрес доставки (обязательное поле)
-	email: string; // Email покупателя (обязательное поле)
-	phone: string; // Телефон покупателя (обязательное поле)
-	total: number; // Общая сумма заказа (проверяется сервером!)
-	items: TypeFrom<IProduct, 'id'>[]; // Массив UUID товаров из корзины
+	address: string; // Адрес доставки
+	email: string; // Email покупателя
+	phone: string; // Телефон покупателя
+	total: number; // Общая сумма заказа
+	items: TypeFrom<IProduct, 'id'>[]; // Массив UUID товаров
 }
 
 export type TOrderSuccess = {
@@ -56,8 +56,8 @@ export enum GalleryEvent {
 }
 
 export interface IProductModel {
-	items: IProduct[]; // массив товаров, геттер и сеттер
-	selection: TypeFrom<IProduct, 'id'> | null; // ID выбранного товара (для работы модального окна с деталями товара)
+	items: IProduct[]; // массив товаров
+	selection: TypeFrom<IProduct, 'id'> | null; // ID выбранного товара
 
 	getProduct(productId: TypeFrom<IProduct, 'id'>): IProduct | null;
 }
@@ -74,7 +74,7 @@ export interface ICartItemData
 }
 
 export interface ICartViewData {
-	items: ICartItemData[]; // Массив товаров с позицией в корзине
+	items: ICartItemData[]; // Массив товаров
 	totalCost: number;
 	isEmpty: boolean;
 }
@@ -185,10 +185,13 @@ export type CartViewConfig = {
 };
 
 export type TOrderItems = Pick<IOrderRequest, 'items' | 'total'>;
+export type TOrderParameters = Omit<IOrderRequest, 'items' | 'total'>;
 export type TOrderContacts = Pick<IOrderRequest, 'email' | 'phone'>;
 export type TOrderDelivery = Pick<IOrderRequest, 'payment' | 'address'>;
 
-// Дженерик тип для форм с ошибками валидации
+export type TOrderChangeRequest = {
+	changedData: Partial<TOrderParameters>;
+};
 
 export enum ValidityState {
 	Invalid = 'invalid',
@@ -206,7 +209,6 @@ export type FormData<T> = T & {
 	validity: FieldValidity[];
 };
 
-// Типы для модели заказа
 export enum OrderStep {
 	Cart = 'cart',
 	Delivery = 'delivery',
@@ -218,7 +220,7 @@ export enum OrderStep {
 export enum OrderEvent {
 	StepChanged = 'order:step:changed',
 	DataChanged = 'order:request:changed',
-	ValidateRequest = 'order:request:validate',
+	ChangeRequest = 'order:form:change',
 	ValidationFailed = 'order:validation:failed',
 	OrderFailed = 'order:response:received',
 	SubmitOrderTransaction = 'order:transaction:submit',
@@ -227,18 +229,11 @@ export enum OrderEvent {
 }
 
 export interface IOrderModel {
-	// Данные заказа
-	orderData: IOrderRequest; // геттер
-	orderResponse: IOrderResponse | null; // геттер, сеттер
-	currentStep: OrderStep; // геттер
-
-	// Методы для работы с данными
-	setOrderData(step: OrderStep, data: Partial<IOrderRequest>): void;
-
-	// Валидация
-	validate(data: Partial<IOrderRequest>, strict?: boolean): FieldValidity[];
-
-	// Управление шагами
+	orderParameters: TOrderParameters;
+	orderResponse: IOrderResponse | null;
+	currentStep: OrderStep;
+	setOrderParameters(data: Partial<TOrderParameters>): void;
+	validate(data: Partial<TOrderParameters>): FieldValidity[];
 	submitStep(): void;
 	reset(): OrderStep;
 }
@@ -267,7 +262,6 @@ export type OrderSuccessViewConfig = {
 	closeButtonSelector: string;
 };
 
-// Зависимости презентера
 export interface IAppPresenterDependencies {
 	events: IEvents;
 	larekApi: ILarekApi;
