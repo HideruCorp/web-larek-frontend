@@ -7,7 +7,7 @@
 - **Каталог товаров** - отображение товаров с сервера в виде карточек
 - **Детальный просмотр товара** - модальное окно с подробной информацией
 - **Корзина покупок** - добавление/удаление товаров, расчет общей стоимости  
-- **Оформление заказа** - двухэтапный процесс: способ оплаты/доставка → контактные данные
+- **Оформление заказа** - двухэтапный процесс: способ оплаты/доставка -> контактные данные
 - **Валидация форм** - проверка обязательных полей на каждом шаге
 - **Обработка бесценных товаров** - товары с `price: null` недоступны для покупки
 
@@ -112,10 +112,18 @@ type TOrderError = {
 type IOrderResponse = TOrderSuccess | TOrderError;
 ```
 
-Галерея товаров на главной странице - `IProductGalleryModel`:
+API для работы с сервером веб-ларька - `ILarekApi`:
+```ts
+interface ILarekApi {
+    getProducts(): Promise<IProduct[]>; // Получение каталога товаров
+    sendOrder(orderData: IOrderRequest): Promise<IOrderResponse>; // Отправка заказа
+}
+```
+
+Галерея товаров на главной странице - `IProductModel`:
 
 ```ts
-interface IProductGalleryModel {
+interface IProductModel {
     items: IProduct[]; // Массив товаров
     selection: TypeFrom<IProduct, 'id'> | null; // ID выбранного товара для модального окна
 
@@ -273,7 +281,8 @@ enum OrderEvent {
     ValidationFailed = 'order:validation:failed', // Ошибки валидации
     OrderFailed = 'order:response:received',      // Ошибка при оформлении заказа
     SubmitOrderTransaction = 'order:transaction:submit', // Отправка заказа
-    SubmitStep = 'order:step:submit'             // Отправка шага заказа
+    SubmitStep = 'order:step:submit',            // Отправка шага заказа
+    SuccessClose = 'order:success:close_clicked'  // Закрытие экрана успешного заказа
 }
 ```
 
@@ -316,7 +325,7 @@ interface IOrderModel {
 
 ### Слой данных
 
-#### Класс ProductGalleryModel
+#### Класс ProductModel
 Класс отвечает за управление каталогом товаров и отслеживание выбранного для просмотра товара.
 Конструктор класса принимает экземпляр брокера событий (IEvents) для обеспечения связи с другими компонентами приложения через паттерн Observer.
 
@@ -377,10 +386,10 @@ interface IOrderModel {
 - **Строгая валидация**: при `strict: true` требует заполнения всех полей
 
 **Логика работы с шагами:**
-- `Cart` → `Delivery`: проверяет наличие товаров
-- `Delivery` → `Contacts`: проверяет способ оплаты и адрес
-- `Contacts` → `SendingOrder`: проверяет контактные данные и отправляет транзакцию
-- `SendingOrder` → `Success`: автоматический переход при успешном ответе
+- `Cart` -> `Delivery`: проверяет наличие товаров
+- `Delivery` -> `Contacts`: проверяет способ оплаты и адрес
+- `Contacts` -> `SendingOrder`: проверяет контактные данные и отправляет транзакцию
+- `SendingOrder` -> `Success`: автоматический переход при успешном ответе
 
 **События:**
 - `OrderEvent.StepChanged` - при изменении текущего шага
@@ -515,28 +524,21 @@ interface IOrderModel {
 - `modal:opened` - при открытии модального окна
 - `modal:closed` - при закрытии модального окна
 
-### Слой коммуникации (API)
+#### Класс OrderSuccessView
+Компонент экрана успешного оформления заказа.
 
-#### Класс Api
-Базовый класс для работы с HTTP запросами. Инкапсулирует логику отправки запросов к серверу.
+**Наследуется от:** `Component<TOrderSuccess>`
 
-**Реализует интерфейс:** `IApi`
+**Принимаемые данные:** Объект типа `TOrderSuccess` (содержит `id` и `total`)
 
-**Основные методы:**
-- `get<T>(uri: string): Promise<T>` - выполняет GET запрос
-- `post<T>(uri: string, data: object, method?: ApiPostMethods): Promise<T>` - выполняет POST/PUT/DELETE запрос
-- `handleResponse<T>(response: Response): Promise<T>` - обрабатывает ответ сервера
-
-#### Класс LarekApi
-Специализированный API клиент для веб-ларька. Использует композицию с базовым `Api`.
+**Основные сеттеры (protected):**
+- `set total(value: number)` - устанавливает общую сумму заказа в формате "Списано X синансов"
 
 **Основные методы:**
-- `getProducts(): Promise<IProduct[]>` - получает каталог товаров с сервера, автоматически добавляет CDN_URL к изображениям
-- `sendOrder(orderData: IOrderRequest): Promise<IOrderResponse>` - отправляет заказ на сервер
+- `render(data?: Partial<TOrderSuccess>): HTMLElement` - обновляет компонент данными успешного заказа и возвращает DOM элемент
 
-**API Endpoints:**
-- `GET /product` → `{total: number, items: IProduct[]}` - получение каталога
-- `POST /order` → `{id: string, total: number}` - создание заказа
+**Генерируемые события:**
+- `order:success:close_clicked` - при клике на кнопку закрытия экрана успеха
 
 ### Фабрики компонентов
 
@@ -568,9 +570,47 @@ interface IOrderModel {
 - `build(): IComponent<ICartItemData>` - создает новый экземпляр CartItemView на основе шаблона корзины
 - `buildPlaceholder(): HTMLElement` - создает элемент с надписью "Корзина пуста" для отображения в пустой корзине
 
+### Слой коммуникации (API)
+
+#### Класс Api
+Базовый класс для работы с HTTP запросами. Инкапсулирует логику отправки запросов к серверу.
+
+**Реализует интерфейс:** `IApi`
+
+**Основные методы:**
+- `get<T>(uri: string): Promise<T>` - выполняет GET запрос
+- `post<T>(uri: string, data: object, method?: ApiPostMethods): Promise<T>` - выполняет POST/PUT/DELETE запрос
+- `handleResponse<T>(response: Response): Promise<T>` - обрабатывает ответ сервера
+
+#### Класс LarekApi
+Специализированный API клиент для веб-ларька. Использует композицию с базовым `Api`.
+
+**Реализует интерфейс:** `ILarekApi`
+
+**Основные методы:**
+- `getProducts(): Promise<IProduct[]>` - получает каталог товаров с сервера, автоматически добавляет CDN_URL к изображениям
+- `sendOrder(orderData: IOrderRequest): Promise<IOrderResponse>` - отправляет заказ на сервер
+
+**API Endpoints:**
+- `GET /product` -> `{total: number, items: IProduct[]}` - получение каталога
+- `POST /order` -> `{id: string, total: number}` - создание заказа
+
 ### Презентер
 
-Логика связывания слоев реализована в файле `src/index.ts` через систему событий.
+Логика связывания слоев реализована в классе `AppPresenter` (`src/AppPresenter.ts`) и инициализируется в файле `src/index.ts` через систему событий.
+
+#### Класс AppPresenter
+Основной класс презентера, который координирует взаимодействие между всеми компонентами приложения.
+
+**Основные обязанности:**
+- Инициализация всех компонентов приложения через зависимости
+- Настройка обработчиков событий для связи между слоями
+- Загрузка начальных данных с сервера
+
+**Конструктор принимает:** `IAppPresenterDependencies` - объект со всеми необходимыми зависимостями (модели, представления, API)
+
+**Основные методы:**
+- `loadInitialData(): void` - загружает каталог товаров с сервера при запуске приложения
 
 ## Таблица событий приложения
 
@@ -593,3 +633,4 @@ interface IOrderModel {
 | **OrderEvent.OrderFailed** | `order:response:received` | OrderModel | Ошибка при оформлении заказа (в ответе от API) |
 | **OrderEvent.SubmitOrderTransaction** | `order:transaction:submit` | OrderModel | Отправка заказа на сервер |
 | **OrderEvent.SubmitStep** | `order:step:submit` | OrderModel | Запрос перехода на следующий шаг заказа |
+| **OrderEvent.SuccessClose** | `order:success:close_clicked` | OrderSuccessView | Клик по кнопке закрытия экрана успешного заказа |

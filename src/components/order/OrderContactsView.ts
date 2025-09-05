@@ -60,16 +60,10 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 	 */
 	protected _setupEventListeners(): void {
 		// Реактивная валидация при вводе email
-		this._emailInput.addEventListener(
-			'input',
-			this._handleValidate.bind(this)
-		);
+		this._emailInput.addEventListener('input', this._handleValidate.bind(this));
 
 		// Реактивная валидация при вводе телефона
-		this._phoneInput.addEventListener(
-			'input',
-			this._handleValidate.bind(this)
-		);
+		this._phoneInput.addEventListener('input', this._handleValidate.bind(this));
 
 		// Обработка отправки формы
 		this._formElement.addEventListener('submit', (e) => {
@@ -153,8 +147,14 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 			const incomplete = validity.filter(
 				(field) => field.state === ValidityState.Incomplete
 			);
-			this.setText(this._errorElement, '');
-			this.setDisabled(this._submitButton, incomplete.length > 0);
+			const incompleteCount = incomplete.length;
+			this.setText(
+				this._errorElement,
+				incompleteCount > 0 && incompleteCount !== validity.length
+					? incomplete.shift().error
+					: ''
+			);
+			this.setDisabled(this._submitButton, incompleteCount > 0);
 		}
 	}
 

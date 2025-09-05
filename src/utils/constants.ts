@@ -6,7 +6,8 @@ import {
   ModalConfig,
   OrderDeliveryViewConfig,
   OrderContactsViewConfig,
-  CartItemFactoryConfig
+  CartItemFactoryConfig,
+  OrderSuccessViewConfig
 } from "../types";
 
 export const API_URL = `${process.env.API_ORIGIN}/api/weblarek`;
@@ -84,4 +85,9 @@ export const DEFAULT_ORDER_CONTACTS_CONFIG: OrderContactsViewConfig = {
 	phoneInputSelector: '.form__input[name="phone"]',
 	submitButtonSelector: 'button[type="submit"]',
 	errorSelector: '.form__errors'
+};
+
+export const DEFAULT_ORDER_SUCCESS_CONFIG: OrderSuccessViewConfig = {
+	totalSelector: '.order-success__description',
+	closeButtonSelector: '.order-success__close'
 };

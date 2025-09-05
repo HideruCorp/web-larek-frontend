@@ -45,12 +45,17 @@ export interface IApi {
 	post<T>(uri: string, data: object, method?: ApiPostMethods): Promise<T>;
 }
 
+export interface ILarekApi {
+	getProducts(): Promise<IProduct[]>;
+	sendOrder(orderData: IOrderRequest): Promise<IOrderResponse>;
+}
+
 export enum GalleryEvent {
 	ItemsChanged = 'gallery:items:changed',
 	SelectionChanged = 'gallery:selection:changed',
 }
 
-export interface IProductGalleryModel {
+export interface IProductModel {
 	items: IProduct[]; // массив товаров, геттер и сеттер
 	selection: TypeFrom<IProduct, 'id'> | null; // ID выбранного товара (для работы модального окна с деталями товара)
 
@@ -112,6 +117,13 @@ export type IModalData = {
 	content: HTMLElement;
 };
 
+export interface IModal {
+	render(data: IModalData): HTMLElement;
+	open(): void;
+	close(): void;
+	isOpened(): boolean;
+}
+
 export type ModalConfig = {
 	contentSelector: string;
 	closeButtonSelector: string;
@@ -163,7 +175,7 @@ export type CartItemFactoryConfig = {
 		elementName: keyof HTMLElementTagNameMap;
 		text: string;
 	};
-}
+};
 
 export type CartViewConfig = {
 	listSelector: string;
@@ -194,7 +206,6 @@ export type FormData<T> = T & {
 	validity: FieldValidity[];
 };
 
-
 // Типы для модели заказа
 export enum OrderStep {
 	Cart = 'cart',
@@ -212,6 +223,7 @@ export enum OrderEvent {
 	OrderFailed = 'order:response:received',
 	SubmitOrderTransaction = 'order:transaction:submit',
 	SubmitStep = 'order:step:submit',
+	SuccessClose = 'order:success:close_clicked',
 }
 
 export interface IOrderModel {
@@ -224,7 +236,7 @@ export interface IOrderModel {
 	setOrderData(step: OrderStep, data: Partial<IOrderRequest>): void;
 
 	// Валидация
-	validate(data: Partial<IOrderRequest>, strict: boolean): FieldValidity[];
+	validate(data: Partial<IOrderRequest>, strict?: boolean): FieldValidity[];
 
 	// Управление шагами
 	submitStep(): void;
@@ -249,3 +261,31 @@ export type OrderContactsViewConfig = {
 	submitButtonSelector: string;
 	errorSelector: string;
 };
+
+export type OrderSuccessViewConfig = {
+	totalSelector: string;
+	closeButtonSelector: string;
+};
+
+// Зависимости презентера
+export interface IAppPresenterDependencies {
+	events: IEvents;
+	larekApi: ILarekApi;
+	modal: IModal;
+	product: {
+		productModel: IProductModel;
+		productGalleryView: IComponent<IProduct[]>;
+		productDetailView: IComponent<IProductViewData>;
+	};
+	cart: {
+		cartModel: ICartModel;
+		cartIcon: IComponent<TCartInfo>;
+		cartView: IComponent<ICartViewData>;
+	};
+	order: {
+		orderModel: IOrderModel;
+		orderDeliveryView: IComponent<FormData<TOrderDelivery>>;
+		orderContactsView: IComponent<FormData<TOrderContacts>>;
+		orderSuccessView: IComponent<TOrderSuccess>;
+	};
+}

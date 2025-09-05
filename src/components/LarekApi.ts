@@ -1,4 +1,4 @@
-import { IApi, IProduct, IOrderRequest, IOrderResponse, ApiListResponse } from '../types';
+import { IApi, IProduct, IOrderRequest, IOrderResponse, ApiListResponse, ILarekApi } from '../types';
 
 export type ApiConfig = {
   cdnUrl: string;
@@ -6,11 +6,6 @@ export type ApiConfig = {
 
 const DEFAULT_API_CONFIG: ApiConfig = {
   cdnUrl: ''
-}
-
-export interface ILarekApi {
-  getProducts(): Promise<IProduct[]>;
-  sendOrder(orderData: IOrderRequest): Promise<IOrderResponse>;
 }
 
 export class LarekApi implements ILarekApi {

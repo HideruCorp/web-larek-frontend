@@ -1,13 +1,13 @@
-import { GalleryEvent, IProduct, IProductGalleryModel } from "../../types";
+import { GalleryEvent, IProduct, IProductModel } from "../../types";
 import { TypeFrom } from "../../utils/utils";
 import { IEvents } from "../base/events";
 
 
 export interface ProductGalleryModelConstructor {
-  new(events: IEvents): IProductGalleryModel;
+  new(events: IEvents): IProductModel;
 }
 
-export class ProductGalleryModel implements IProductGalleryModel {
+export class ProductGalleryModel implements IProductModel {
   protected _items: IProduct[];
   protected _selection: TypeFrom<IProduct, "id"> | null;
   

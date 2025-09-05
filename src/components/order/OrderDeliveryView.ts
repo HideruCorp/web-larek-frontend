@@ -179,8 +179,14 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 			const incomplete = validity.filter(
 				(field) => field.state === ValidityState.Incomplete
 			);
-			this.setText(this._errorElement, '');
-			this.setDisabled(this._submitButton, incomplete.length > 0);
+			const incompleteCount = incomplete.length;
+			this.setText(
+				this._errorElement,
+				incompleteCount > 0 && incompleteCount !== validity.length
+					? incomplete.shift().error
+					: ''
+			);
+			this.setDisabled(this._submitButton, incompleteCount > 0);
 		}
 	}
 
