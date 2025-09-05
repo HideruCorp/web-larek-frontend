@@ -275,6 +275,15 @@ type FormData<T> = T & {
 };
 ```
 
+Базовая конфигурация форм - `FormViewConfig`:
+
+```ts
+type FormViewConfig = {
+    submitButtonSelector: string;   // Селектор кнопки отправки формы
+    errorSelector?: string;         // Селектор элемента ошибок (опционально)
+};
+```
+
 События модели заказа - `OrderEvent`:
 
 ```ts
@@ -309,6 +318,8 @@ interface IOrderModel {
     reset(): OrderStep;
 }
 ```
+
+**Примечание:** Для основных типов конфигурации компонентов прописаны значения по умолчанию в `src/utils/constants.ts`.
 
 ## Архитектура приложения
 
@@ -426,6 +437,31 @@ interface IOrderModel {
 - `setDisabled(element: HTMLElement, state: boolean): void` - установка состояния disabled
 - `setImage(element: HTMLImageElement, src: string, alt?: string): void` - установка изображения
 
+#### Базовый класс FormComponent<T>
+Абстрактный класс для всех форм приложения. Наследуется от `Component<FormData<T>>` и предоставляет общую логику управления формами с валидацией.
+
+**Наследуется от:** `Component<FormData<T>>`
+
+**Основные поля:**
+- `_formElement: HTMLFormElement` - элемент формы
+- `_errorElement?: HTMLElement` - элемент для отображения ошибок (необязательный)
+- `_submitButton: HTMLButtonElement` - кнопка отправки формы
+
+**Основные методы:**
+- `render(data?: Partial<FormData<T>>): HTMLElement` - базовый метод рендеринга, обрабатывает валидацию и вызывает `renderForm` наследного класса.
+- `protected abstract renderForm(data: Partial<T>): HTMLElement` - абстрактный метод для рендеринга конкретной формы
+- `protected abstract onSubmit(): void` - абстрактный метод обработки отправки формы
+- `protected set validity(validity: FieldValidity[]): void` - обработка результатов валидации, управление состоянием кнопки и отображением ошибок
+
+**Логика валидации:**
+- Отображает первую критическую ошибку (`ValidityState.Invalid`) и блокирует кнопку отправки
+- При отсутствии критических ошибок показывает сообщение о незаполненных (`ValidityState.Incomplete`) только если хотя бы одно из полей формы заполнено
+- Активирует кнопку отправки только когда все поля валидны
+
+**Принцип использования:**
+- Наследующие классы должны реализовать `renderForm` для  рендеринга данных формы и `onSubmit` для обработки отправки формы
+- Класс автоматически обрабатывает события `submit` формы с предотвращением стандартного поведения
+
 #### Класс Modal
 Компонент модального окна для отображения различного контента.
 
@@ -529,50 +565,56 @@ interface IOrderModel {
 #### Класс OrderDeliveryView
 Компонент для первого шага оформления заказа - выбор способа оплаты и адреса доставки.
 
-**Наследуется от:** `Component<FormData<TOrderDelivery>>`
+**Наследуется от:** `FormComponent<TOrderDelivery>`
 
-**Принимаемые данные:** Объект типа `FormData<TOrderDelivery>` (содержит `payment`, `address`, `validity`)
+**Принимаемые данные:** Объект типа `TOrderDelivery` (содержит `payment`, `address`)
+
+**Основные поля:**
+- `_paymentButtons: HTMLButtonElement[]` - массив кнопок выбора способа оплаты
+- `_addressInput: HTMLInputElement` - поле ввода адреса доставки
 
 **Основные сеттеры (protected):**
-- `set payment(value: PaymentMethod)` - устанавливает активный способ оплаты (card/cash)
+- `set payment(value: PaymentMethod)` - устанавливает активный способ оплаты (card/cash), переключает состояние кнопок
 - `set address(value: string)` - устанавливает адрес доставки в поле ввода
-- `set validity(validity: FieldValidity[])` - отображает ошибки валидации и управляет состоянием кнопки "Далее"
 
 **Основные методы:**
-- `render(data?: Partial<FormData<TOrderDelivery>>): HTMLElement` - обновляет компонент данными шага доставки и возвращает DOM элемент
+- `protected renderForm(data: Partial<TOrderDelivery>): HTMLElement` - рендеринг данных формы доставки
+- `protected onSubmit(): void` - обработка отправки формы, генерирует `OrderEvent.SubmitStep`
 
 **Принцип работы:**
-- **Реактивные события**: при изменении каждого поля отправляется `OrderEvent.ChangeRequest` с измененными данными
-- **Никаких геттеров**: компонент не читает состояние полей, только отправляет события об изменениях
-- **Валидация через модель**: получает результаты валидации из модели через презентер
+- **Наследует валидацию** от `FormComponent`
+- При изменении каждого поля отправляется `OrderEvent.ChangeRequest` с измененными данными
 
 **Генерируемые события:**
 - `order:form:change` - при изменении способа оплаты или адреса (отправляет `TOrderChangeRequest`)
-- `order:step:submit` - при клике на кнопку "Далее"
+- `order:step:submit` - при клике на кнопку "Далее" (через `onSubmit`)
 
 #### Класс OrderContactsView
 Компонент для второго шага оформления заказа - ввод контактных данных (email и телефон).
 
-**Наследуется от:** `Component<FormData<TOrderContacts>>`
+**Наследуется от:** `FormComponent<TOrderContacts>`
 
-**Принимаемые данные:** Объект типа `FormData<TOrderContacts>` (содержит `email`, `phone`, `validity`)
+**Принимаемые данные:** Объект типа `TOrderContacts` (содержит `email`, `phone`)
+
+**Основные поля:**
+- `_emailInput: HTMLInputElement` - поле ввода email
+- `_phoneInput: HTMLInputElement` - поле ввода телефона
 
 **Основные сеттеры (protected):**
 - `set email(value: string)` - устанавливает email в поле ввода
 - `set phone(value: string)` - устанавливает телефон в поле ввода
-- `set validity(validity: FieldValidity[])` - отображает ошибки валидации и управляет состоянием кнопки "Оплатить"
 
 **Основные методы:**
-- `render(data?: Partial<FormData<TOrderContacts>>): HTMLElement` - обновляет компонент данными контактов и возвращает DOM элемент
+- `protected renderForm(data: Partial<TOrderContacts>): HTMLElement` - рендеринг данных формы контактов
+- `protected onSubmit(): void` - обработка отправки формы, генерирует `OrderEvent.SubmitStep`
 
 **Принцип работы:**
-- **Реактивные события**: при изменении каждого поля отправляется `OrderEvent.ChangeRequest` с измененными данными
-- **Никаких геттеров**: компонент не читает состояние полей, только отправляет события об изменениях
-- **Валидация через модель**: получает результаты валидации из модели через презентер
+- **Наследует валидацию** от `FormComponent`
+- При изменении каждого поля отправляется `OrderEvent.ChangeRequest` с измененными данными
 
 **Генерируемые события:**
 - `order:form:change` - при изменении email или телефона (отправляет `TOrderChangeRequest`)
-- `order:step:submit` - при клике на кнопку "Оплатить"
+- `order:step:submit` - при клике на кнопку "Оплатить" (через `onSubmit`)
 
 #### Класс OrderSuccessView
 Компонент экрана успешного оформления заказа.

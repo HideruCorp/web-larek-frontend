@@ -209,6 +209,11 @@ export type FormData<T> = T & {
 	validity: FieldValidity[];
 };
 
+export type FormViewConfig = {
+	submitButtonSelector: string;
+	errorSelector?: string;
+}
+
 export enum OrderStep {
 	Cart = 'cart',
 	Delivery = 'delivery',
@@ -238,23 +243,19 @@ export interface IOrderModel {
 	reset(): OrderStep;
 }
 
-export type OrderDeliveryViewConfig = {
+export type OrderDeliveryViewConfig = FormViewConfig & {
 	paymentButtonSelector: string;
 	paymentMethodMapping: {
 		name: string;
 		method: PaymentMethod;
 	}[];
 	addressInputSelector: string;
-	submitButtonSelector: string;
-	errorSelector: string;
 	activeButtonModifier: string;
 };
 
-export type OrderContactsViewConfig = {
+export type OrderContactsViewConfig = FormViewConfig & {
 	emailInputSelector: string;
 	phoneInputSelector: string;
-	submitButtonSelector: string;
-	errorSelector: string;
 };
 
 export type OrderSuccessViewConfig = {

@@ -1,57 +1,42 @@
-import { Component } from '../base/Component';
+import { DEFAULT_ORDER_DELIVERY_CONFIG } from '../../utils/constants';
+import { ensureAllElements, ensureElement } from '../../utils/utils';
+import { FormComponent } from '../base/FormComponent';
 import { IEvents } from '../base/events';
 import {
-	TOrderDelivery,
-	FormData,
-	PaymentMethod,
-	OrderEvent,
 	OrderDeliveryViewConfig,
-	FieldValidity,
-	ValidityState,
+	OrderEvent,
+	PaymentMethod,
+	TOrderDelivery,
 } from '../../types';
-import { ensureAllElements, ensureElement } from '../../utils/utils';
-import { DEFAULT_ORDER_DELIVERY_CONFIG } from '../../utils/constants';
 
 /**
  * Компонент для первого шага оформления заказа - выбор способа оплаты и адреса доставки.
  * Наследуется от базового Component и работает с типом TOrderDelivery.
  */
-export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
+export class OrderDeliveryView extends FormComponent<TOrderDelivery> {
 	protected _config: Pick<
 		OrderDeliveryViewConfig,
 		'paymentMethodMapping' | 'activeButtonModifier'
 	>;
-	protected _formElement: HTMLFormElement;
 	protected _paymentButtons: HTMLButtonElement[];
 	protected _addressInput: HTMLInputElement;
-	protected _submitButton: HTMLButtonElement;
-	protected _errorElement: HTMLElement;
 
 	constructor(
 		container: HTMLElement,
-		events?: IEvents,
+		events: IEvents,
 		config?: Partial<OrderDeliveryViewConfig>
 	) {
-		super(container, events);
+		super(container, events, config);
 		const _config = { ...DEFAULT_ORDER_DELIVERY_CONFIG, ...config };
 		this._config = _config;
 
 		// Обязательные элементы
-		this._formElement = this.container as HTMLFormElement;
 		this._paymentButtons = ensureAllElements<HTMLButtonElement>(
 			_config.paymentButtonSelector,
 			this.container
 		);
 		this._addressInput = ensureElement<HTMLInputElement>(
 			_config.addressInputSelector,
-			this.container
-		);
-		this._submitButton = ensureElement<HTMLButtonElement>(
-			_config.submitButtonSelector,
-			this.container
-		);
-		this._errorElement = ensureElement<HTMLElement>(
-			_config.errorSelector,
 			this.container
 		);
 
@@ -83,21 +68,13 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 				changedData: { address: this._addressInput.value },
 			});
 		});
-
-		// Обработка кнопки "Далее"
-		this._formElement.addEventListener('submit', (e) => {
-			e.preventDefault();
-			this._handleSubmit();
-		});
 	}
 
 	/**
 	 * Обработка отправки формы
 	 */
-	protected _handleSubmit(): void {
-		this.validity = [];
-
-		this.events?.emit(OrderEvent.SubmitStep);
+	protected onSubmit(): void {
+		this.events.emit(OrderEvent.SubmitStep);
 	}
 
 	/**
@@ -124,44 +101,14 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 	}
 
 	/**
-	 * Отображение ошибок валидации
+	 * Основной метод рендеринга формы
 	 */
-	protected set validity(validity: FieldValidity[]) {
-		const invalid = validity.filter(
-			(field) => field.state === ValidityState.Invalid
-		);
-		if (invalid.length > 0) {
-			this.setText(this._errorElement, invalid.shift().error);
-			this.setDisabled(this._submitButton, true);
-		} else {
-			const incomplete = validity.filter(
-				(field) => field.state === ValidityState.Incomplete
-			);
-			const incompleteCount = incomplete.length;
-			this.setText(
-				this._errorElement,
-				incompleteCount > 0 && incompleteCount !== validity.length
-					? incomplete.shift().error
-					: ''
-			);
-			this.setDisabled(this._submitButton, incompleteCount > 0);
+	protected renderForm(data: Partial<TOrderDelivery>): HTMLElement {
+		if (data.payment !== undefined) {
+			this.payment = data.payment;
 		}
-	}
-
-	/**
-	 * Основной метод рендеринга компонента
-	 */
-	render(data?: Partial<FormData<TOrderDelivery>>): HTMLElement {
-		if (data) {
-			if (data.payment !== undefined) {
-				this.payment = data.payment;
-			}
-			if (data.address !== undefined) {
-				this.address = data.address;
-			}
-			if (data.validity !== undefined) {
-				this.validity = data.validity;
-			}
+		if (data.address !== undefined) {
+			this.address = data.address;
 		}
 		return this.container;
 	}
