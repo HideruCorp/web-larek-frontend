@@ -81,11 +81,11 @@ type PaymentMethod = 'card' | 'cash' | '';
 
 ```ts
 interface IOrderRequest {
-    payment: PaymentMethod; // Способ оплаты  
+    payment: PaymentMethod; // Способ оплаты
     address: string; // Адрес доставки (обязательное поле)
     email: string; // Email покупателя (обязательное поле)
     phone: string; // Телефон покупателя (обязательное поле)
-    total: number; // Общая сумма заказа (ПРОВЕРЯЕТСЯ СЕРВЕРОМ!)
+    total: number; // Общая сумма заказа (проверяется сервером!)
     items: TypeFrom<IProduct, 'id'>[]; // Массив UUID товаров из корзины
 }
 ```
@@ -95,8 +95,8 @@ interface IOrderRequest {
 Успешный ответ - `TOrderSuccess`:
 ```ts
 type TOrderSuccess = {
-    id: string; // UUID созданного заказа
-    total: number; // Сумма заказа для отображения
+    id: string; // Id заказа
+    total: number; // Общая сумма заказа
 };
 ```
 
@@ -189,6 +189,18 @@ type TOrderDelivery = Pick<IOrderRequest, 'payment' | 'address'>;
 type TOrderContacts = Pick<IOrderRequest, 'email' | 'phone'>;
 ```
 
+Шаги оформления заказа - `OrderStep`:
+
+```ts
+enum OrderStep {
+    Cart = 'cart',           // Корзина, процесс оформления не начат
+    Delivery = 'delivery',   // Выбор способа оплаты и адреса доставки
+    Contacts = 'contacts',   // Ввод контактных данных
+    SendingOrder = 'sending', // Отправка на API сервера (без визуального отображения)
+    Success = 'success'      // Успешное завершение заказа
+}
+```
+
 События галереи - `GalleryEvent`:
 ```ts
 enum GalleryEvent {
@@ -220,6 +232,69 @@ enum CartEvent {
 enum ModalEvent {
     Opened = 'modal:opened',
     Closed = 'modal:closed',
+}
+```
+
+Состояние валидации полей - `ValidityState`:
+
+```ts
+enum ValidityState {
+    Invalid = 'invalid',     // При переходе в след шаг поле заполнено некорректно
+    Incomplete = 'incomplete', // Поле заполнено некорректно (при реактивной валидации, ошибку не показываем)
+    Valid = 'valid',         // Поле корректно заполнено
+}
+```
+
+Валидность поля - `FieldValidity`:
+
+```ts
+type FieldValidity = {
+    field: string;           // Имя поля
+    state: ValidityState;    // Состояние валидации
+    error: string;           // Сообщение об ошибке
+};
+```
+
+Данные формы с валидацией - `FormData<T>`:
+
+```ts
+type FormData<T> = T & {
+    validity: FieldValidity[]; // Массив состояний валидации полей
+};
+```
+
+События модели заказа - `OrderEvent`:
+
+```ts
+enum OrderEvent {
+    StepChanged = 'order:step:changed',           // Изменение текущего шага заказа
+    DataChanged = 'order:request:changed',        // Обновление данных заказа
+    ValidateRequest = 'order:request:validate',   // Запрос валидации данных
+    ValidationFailed = 'order:validation:failed', // Ошибки валидации
+    OrderFailed = 'order:response:received',      // Ошибка при оформлении заказа
+    SubmitOrderTransaction = 'order:transaction:submit', // Отправка заказа
+    SubmitStep = 'order:step:submit'             // Отправка шага заказа
+}
+```
+
+Интерфейс модели заказа - `IOrderModel`:
+
+```ts
+interface IOrderModel {
+    // Данные заказа
+    orderData: IOrderRequest; // геттер
+    orderResponse: IOrderResponse | null; // геттер, сеттер
+    currentStep: OrderStep; // геттер
+
+    // Методы для работы с данными
+    setOrderData(step: OrderStep, data: Partial<IOrderRequest>): void;
+
+    // Валидация
+    validate(data: Partial<IOrderRequest>, strict: boolean): FieldValidity[];
+
+    // Управление шагами
+    submitStep(): void;
+    reset(): OrderStep;
 }
 ```
 
@@ -277,6 +352,42 @@ enum ModalEvent {
 **События:**
 - Генерирует `cart:items:changed` при любом изменении корзины
 
+#### Класс OrderModel
+Класс отвечает за управление процессом оформления заказа, валидацию данных и пошаговое заполнение формы заказа. Использует библиотеку valibot для валидации.
+
+**Основные поля:**
+- `_orderData: IOrderRequest` - данные заказа (полная структура)
+- `_orderResponse: IOrderResponse | null` - ответ сервера после отправки заказа
+- `_currentStep: OrderStep` - текущий шаг процесса оформления
+- `events: IEvents` - брокер событий для уведомления об изменениях
+
+**Основные методы:**
+- `setOrderData(step: OrderStep, data: Partial<IOrderRequest>): void` - устанавливает данные заказа для конкретного шага с валидацией
+- `validate(data: Partial<IOrderRequest>, strict: boolean): FieldValidity[]` - валидирует поля с помощью valibot схем. Не применяет их на модель 
+- `submitStep(): void` - переход к следующему шагу с валидацией текущего
+- `reset(): OrderStep` - сброс всех данных заказа и возврат к начальному шагу
+- `get orderData(): IOrderRequest` - геттер для получения копии данных заказа
+- `get/set orderResponse(): IOrderResponse | null` - геттер/сеттер для ответа сервера
+- `get/set currentStep(): OrderStep` - геттер/сеттер для текущего шага
+
+**Валидация с использованием valibot схем:**
+- **PaymentMethodSchema**: проверяет выбор способа оплаты ('card' или 'cash')
+- **IOrderRequestSchema**: полная схема валидации всего заказа
+- **Поэтапная валидация**: различные поля проверяются в зависимости от текущего шага
+- **Строгая валидация**: при `strict: true` требует заполнения всех полей
+
+**Логика работы с шагами:**
+- `Cart` → `Delivery`: проверяет наличие товаров
+- `Delivery` → `Contacts`: проверяет способ оплаты и адрес
+- `Contacts` → `SendingOrder`: проверяет контактные данные и отправляет транзакцию
+- `SendingOrder` → `Success`: автоматический переход при успешном ответе
+
+**События:**
+- `OrderEvent.StepChanged` - при изменении текущего шага
+- `OrderEvent.DataChanged` - при обновлении данных заказа
+- `OrderEvent.ValidationFailed` - при ошибках валидации (передает массив `FieldValidity[]`)
+- `OrderEvent.SubmitOrderTransaction` - при готовности отправить заказ на сервер
+- `OrderEvent.OrderFailed` - при получении ошибки от сервера
 
 ### Слой представления (View)
 
@@ -475,3 +586,10 @@ enum ModalEvent {
 | **CartEvent.CheckoutClicked** | `cart:checkout:clicked` | CartView | Клик по кнопке "Оформить" в корзине |
 | **ModalEvent.Opened** | `modal:opened` | Modal | Открытие модального окна |
 | **ModalEvent.Closed** | `modal:closed` | Modal | Закрытие модального окна |
+| **OrderEvent.StepChanged** | `order:step:changed` | OrderModel | Изменение текущего шага процесса оформления заказа |
+| **OrderEvent.DataChanged** | `order:request:changed` | OrderModel | Обновление данных заказа (адрес, контакты и т.д.) |
+| **OrderEvent.ValidateRequest** | `order:request:validate` | OrderModel | Запрос валидации данных |
+| **OrderEvent.ValidationFailed** | `order:validation:failed` | OrderModel | Ошибки валидации при заполнении данных заказа |
+| **OrderEvent.OrderFailed** | `order:response:received` | OrderModel | Ошибка при оформлении заказа (в ответе от API) |
+| **OrderEvent.SubmitOrderTransaction** | `order:transaction:submit` | OrderModel | Отправка заказа на сервер |
+| **OrderEvent.SubmitStep** | `order:step:submit` | OrderModel | Запрос перехода на следующий шаг заказа |

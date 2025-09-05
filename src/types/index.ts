@@ -176,3 +176,76 @@ export type TOrderItems = Pick<IOrderRequest, 'items' | 'total'>;
 export type TOrderContacts = Pick<IOrderRequest, 'email' | 'phone'>;
 export type TOrderDelivery = Pick<IOrderRequest, 'payment' | 'address'>;
 
+// Дженерик тип для форм с ошибками валидации
+
+export enum ValidityState {
+	Invalid = 'invalid',
+	Incomplete = 'incomplete',
+	Valid = 'valid',
+}
+
+export type FieldValidity = {
+	field: string;
+	state: ValidityState;
+	error: string;
+};
+
+export type FormData<T> = T & {
+	validity: FieldValidity[];
+};
+
+
+// Типы для модели заказа
+export enum OrderStep {
+	Cart = 'cart',
+	Delivery = 'delivery',
+	Contacts = 'contacts',
+	SendingOrder = 'sending',
+	Success = 'success',
+}
+
+export enum OrderEvent {
+	StepChanged = 'order:step:changed',
+	DataChanged = 'order:request:changed',
+	ValidateRequest = 'order:request:validate',
+	ValidationFailed = 'order:validation:failed',
+	OrderFailed = 'order:response:received',
+	SubmitOrderTransaction = 'order:transaction:submit',
+	SubmitStep = 'order:step:submit',
+}
+
+export interface IOrderModel {
+	// Данные заказа
+	orderData: IOrderRequest; // геттер
+	orderResponse: IOrderResponse | null; // геттер, сеттер
+	currentStep: OrderStep; // геттер
+
+	// Методы для работы с данными
+	setOrderData(step: OrderStep, data: Partial<IOrderRequest>): void;
+
+	// Валидация
+	validate(data: Partial<IOrderRequest>, strict: boolean): FieldValidity[];
+
+	// Управление шагами
+	submitStep(): void;
+	reset(): OrderStep;
+}
+
+export type OrderDeliveryViewConfig = {
+	paymentButtonSelector: string;
+	paymentMethodMapping: {
+		name: string;
+		method: PaymentMethod;
+	}[];
+	addressInputSelector: string;
+	submitButtonSelector: string;
+	errorSelector: string;
+	activeButtonModifier: string;
+};
+
+export type OrderContactsViewConfig = {
+	emailInputSelector: string;
+	phoneInputSelector: string;
+	submitButtonSelector: string;
+	errorSelector: string;
+};

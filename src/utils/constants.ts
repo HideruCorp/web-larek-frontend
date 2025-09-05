@@ -1,5 +1,12 @@
 import { 
+  CartIconConfig, 
   ProductViewConfig, 
+  CartItemViewConfig, 
+  CartViewConfig, 
+  ModalConfig,
+  OrderDeliveryViewConfig,
+  OrderContactsViewConfig,
+  CartItemFactoryConfig
 } from "../types";
 
 export const API_URL = `${process.env.API_ORIGIN}/api/weblarek`;
@@ -7,6 +14,12 @@ export const CDN_URL = `${process.env.API_ORIGIN}/content/weblarek`;
 
 export const settings = {
   
+};
+
+export const DEFAULT_MODAL_CONFIG: ModalConfig = {
+	contentSelector: '.modal__content',
+	closeButtonSelector: '.modal__close',
+	openedModifier: 'modal_active',
 };
 
 export const DEFAULT_ITEM_VIEW_CONFIG: ProductViewConfig = {
@@ -54,3 +67,21 @@ export const DEFAULT_CART_VIEW_CONFIG: CartViewConfig = {
   checkoutSelector: '.basket__button',
 };
 
+export const DEFAULT_ORDER_DELIVERY_CONFIG: OrderDeliveryViewConfig = {
+  paymentButtonSelector: '.button_alt',
+  paymentMethodMapping: [
+    { name: 'card', method: 'card' },
+    { name: 'cash', method: 'cash' },
+  ],
+	addressInputSelector: '.form__input[name="address"]',
+	submitButtonSelector: 'button[type="submit"]',
+	errorSelector: '.form__errors',
+	activeButtonModifier: 'button_alt-active'
+};
+
+export const DEFAULT_ORDER_CONTACTS_CONFIG: OrderContactsViewConfig = {
+	emailInputSelector: '.form__input[name="email"]',
+	phoneInputSelector: '.form__input[name="phone"]',
+	submitButtonSelector: 'button[type="submit"]',
+	errorSelector: '.form__errors'
+};
