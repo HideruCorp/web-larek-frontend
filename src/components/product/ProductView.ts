@@ -10,7 +10,6 @@ import { IEvents } from '../base/events';
  * Назначение: отображение товара в виде карточки в галерее на главной странице
  */
 export class ProductView extends Component<IProductViewData> {
-	// DOM элементы карточки
 	protected _categoryElement: HTMLElement;
 	protected _titleElement: HTMLElement;
 	protected _descriptionElement: HTMLElement | null;
@@ -18,8 +17,8 @@ export class ProductView extends Component<IProductViewData> {
 	protected _priceElement: HTMLElement;
 	protected _addToCartButton: HTMLButtonElement | null;
 
-	// Итоговая конфигурация компонента
-	protected _config: ProductViewConfig;
+	// Маппинг категорий
+	protected _categoryClassMap: Record<string,string>;
 
 	// Хранимые данные (только для событий)
 	protected _productId: string;
@@ -31,11 +30,11 @@ export class ProductView extends Component<IProductViewData> {
 	) {
 		super(container, events);
 
-		// Объединяем дефолтную конфигурацию с переданной
-		this._config = { ...DEFAULT_ITEM_VIEW_CONFIG, ...config };
-		const domSelectors = this._config.domSelectors;
+		const _config = { ...DEFAULT_ITEM_VIEW_CONFIG, ...config };
+		this._categoryClassMap = _config.categoryClassMap;
+		const domSelectors = _config.domSelectors;
 
-		// Находим все обязательные DOM элементы
+		// Обязательные элементы
 		this._categoryElement = ensureElement(
 			domSelectors.categorySelector,
 			container
@@ -47,7 +46,7 @@ export class ProductView extends Component<IProductViewData> {
 		) as HTMLImageElement;
 		this._priceElement = ensureElement(domSelectors.priceSelector, container);
 
-		// Необязательные DOM элементы
+		// Необязательные элементы
 		this._descriptionElement = container.querySelector(
 			domSelectors.descriptionSelector
 		);
@@ -55,7 +54,8 @@ export class ProductView extends Component<IProductViewData> {
 			domSelectors.actionButtonSelector
 		) as HTMLButtonElement;
 
-		if (this._config.itemSelectable) {
+		// Обработчики событий
+		if (_config.itemSelectable) {
 			this.container.addEventListener('click', () => {
 				if (this._productId) {
 					this.events?.emit(ProductEvent.CardClicked, { id: this._productId });
@@ -111,11 +111,11 @@ export class ProductView extends Component<IProductViewData> {
 	protected set category(value: string) {
 		this.setText(this._categoryElement, value);
 
-		Object.values(this._config.categoryClassMap).forEach((className) => {
+		Object.values(this._categoryClassMap).forEach((className) => {
 			this.toggleClass(this._categoryElement, className, false);
 		});
 
-		const categoryClass = this._config.categoryClassMap[value];
+		const categoryClass = this._categoryClassMap[value];
 		if (categoryClass) {
 			this.toggleClass(this._categoryElement, categoryClass, true);
 		}

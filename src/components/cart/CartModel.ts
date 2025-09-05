@@ -51,9 +51,8 @@ export class CartModel implements ICartModel {
    * @param productData - Данные товара (ID и цена)
    */
   addProduct(productData: TCartItem): void {
-    // Проверяем, что товар еще не в корзине и что товар не бесценный
     if (!this.hasProduct(productData.id) && productData.price !== null) {
-      this._items.push({ ...productData }); // Создаем копию данных
+      this._items.push({ ...productData });
       this.events.emit(CartEvent.ItemsChanged);
     }
   }

@@ -134,7 +134,7 @@ interface IProductModel {
 Данные товара для отображения в карточке - `IProductViewData`:
 ```ts
 interface IProductViewData extends IProduct {
-    inCart: boolean; // Находится ли товар в корзине (приходит из модели корзины ICartModel.hasProduct)
+    inCart: boolean; // Находится ли товар в корзине
 }
 ```
 
@@ -424,6 +424,21 @@ interface IOrderModel {
 - `setDisabled(element: HTMLElement, state: boolean): void` - установка состояния disabled
 - `setImage(element: HTMLImageElement, src: string, alt?: string): void` - установка изображения
 
+#### Класс Modal
+Компонент модального окна для отображения различного контента.
+
+**Наследуется от:** `Component<IModalData>`
+
+**Основные методы:**
+- `open(): void` - открывает модальное окно
+- `close(): void` - закрывает модальное окно
+- `isOpened(): boolean` - проверяет, открыто ли модальное окно
+- `render(data?: Partial<IModalData>): HTMLElement` - обновляет содержимое модального окна
+
+**Генерируемые события:**
+- `modal:opened` - при открытии модального окна
+- `modal:closed` - при закрытии модального окна
+
 #### Класс ProductView
 Компонент для отображения карточки товара.
 
@@ -508,21 +523,6 @@ interface IOrderModel {
 - `cart:checkout:clicked` - при клике на кнопку "Оформить"
 
 **Конфигурация:** Требует `CartViewConfig` с обязательным `itemFactory` для создания элементов корзины
-
-#### Класс Modal
-Компонент модального окна для отображения различного контента.
-
-**Наследуется от:** `Component<IModalData>`
-
-**Основные методы:**
-- `open(): void` - открывает модальное окно
-- `close(): void` - закрывает модальное окно
-- `isOpened(): boolean` - проверяет, открыто ли модальное окно
-- `render(data?: Partial<IModalData>): HTMLElement` - обновляет содержимое модального окна
-
-**Генерируемые события:**
-- `modal:opened` - при открытии модального окна
-- `modal:closed` - при закрытии модального окна
 
 #### Класс OrderSuccessView
 Компонент экрана успешного оформления заказа.

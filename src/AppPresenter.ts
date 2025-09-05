@@ -65,7 +65,22 @@ export class AppPresenter {
 	}
 
 	private setupEventHandlers(): void {
-		// Product events
+		// События галереи
+		this.events.on(GalleryEvent.SelectionChanged, () => {
+			if (this.productModel.selection === null) return;
+			const itemData = {
+				...this.productModel.getProduct(this.productModel.selection),
+				inCart: this.cartModel.hasProduct(this.productModel.selection),
+			};
+			this.modal.render({ content: this.productDetailView.render(itemData) });
+			this.modal.open();
+		});
+
+		this.events.on(GalleryEvent.ItemsChanged, () => {
+			this.productGalleryView.render(this.productModel.items);
+		});
+
+		// События карточки
 		this.events.on(
 			ProductEvent.CardClicked,
 			(item: { id: TypeFrom<IProduct, 'id'> }) => {
@@ -91,7 +106,7 @@ export class AppPresenter {
 			}
 		);
 
-		// Cart events
+		// События корзины
 		this.events.on(CartEvent.ItemsChanged, () => {
 			this.cartIcon.render({ count: this.cartModel.count });
 
@@ -164,7 +179,7 @@ export class AppPresenter {
 			}
 		);
 
-		// Order events
+		// События заказа
 		this.events.on(OrderEvent.StepChanged, (data: { step: OrderStep }) => {
 			switch (data.step) {
 				case OrderStep.Delivery: {
@@ -302,28 +317,13 @@ export class AppPresenter {
 			this.orderModel.reset();
 		});
 
-		// Modal events
+		// События модельного окна
 		this.events.on(ModalEvent.Closed, () => {
 			this.productModel.selection = null;
 
 			if (this.orderModel.currentStep !== OrderStep.Cart) {
 				this.orderModel.reset();
 			}
-		});
-
-		// Gallery events
-		this.events.on(GalleryEvent.SelectionChanged, () => {
-			if (this.productModel.selection === null) return;
-			const itemData = {
-				...this.productModel.getProduct(this.productModel.selection),
-				inCart: this.cartModel.hasProduct(this.productModel.selection),
-			};
-			this.modal.render({ content: this.productDetailView.render(itemData) });
-			this.modal.open();
-		});
-
-		this.events.on(GalleryEvent.ItemsChanged, () => {
-			this.productGalleryView.render(this.productModel.items);
 		});
 	}
 

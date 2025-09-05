@@ -18,7 +18,7 @@ import { DEFAULT_ORDER_DELIVERY_CONFIG } from '../../utils/constants';
  * Наследуется от базового Component и работает с типом TOrderDelivery.
  */
 export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
-	protected _config: OrderDeliveryViewConfig;
+	protected _config: Pick<OrderDeliveryViewConfig, 'paymentMethodMapping' | 'activeButtonModifier'>;
 	protected _formElement: HTMLFormElement;
 	protected _paymentButtons: HTMLButtonElement[];
 	protected _addressInput: HTMLInputElement;
@@ -31,28 +31,29 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 		config?: Partial<OrderDeliveryViewConfig>
 	) {
 		super(container, events);
-		this._config = { ...DEFAULT_ORDER_DELIVERY_CONFIG, ...config };
+		const _config = { ...DEFAULT_ORDER_DELIVERY_CONFIG, ...config };
+		this._config = _config;
 
-		// Инициализируем элементы формы
+		// Обязательные элементы
 		this._formElement = this.container as HTMLFormElement;
 		this._paymentButtons = ensureAllElements<HTMLButtonElement>(
-			this._config.paymentButtonSelector,
+			_config.paymentButtonSelector,
 			this.container
 		);
 		this._addressInput = ensureElement<HTMLInputElement>(
-			this._config.addressInputSelector,
+			_config.addressInputSelector,
 			this.container
 		);
 		this._submitButton = ensureElement<HTMLButtonElement>(
-			this._config.submitButtonSelector,
+			_config.submitButtonSelector,
 			this.container
 		);
 		this._errorElement = ensureElement<HTMLElement>(
-			this._config.errorSelector,
+			_config.errorSelector,
 			this.container
 		);
 
-		// Устанавливаем обработчики событий
+		// Обработчики событий
 		this._setupEventListeners();
 	}
 
@@ -80,7 +81,7 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 			this._handleValidate.bind(this)
 		);
 
-		// Обработка отправки формы
+		// Обработка кнопки "Далее"
 		this._formElement.addEventListener('submit', (e) => {
 			e.preventDefault();
 			this._handleSubmit();
@@ -88,10 +89,8 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 	}
 
 	protected _handleValidate(): void {
-		// Очищаем ошибки перед отправкой
 		this.validity = [];
 
-		// Отправляем событие для реактивной валидации
 		this.events?.emit(OrderEvent.ValidateRequest, {
 			step: OrderStep.Delivery,
 			data: this._getFormData(),
@@ -110,10 +109,8 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 	 * Обработка отправки формы
 	 */
 	protected _handleSubmit(): void {
-		// Очищаем ошибки перед отправкой
 		this.validity = [];
 
-		// Генерируем событие для финальной валидации и смены шага
 		this.events?.emit(OrderEvent.SubmitStep, {
 			step: OrderStep.Delivery,
 			data: this._getFormData(),
@@ -194,7 +191,6 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 	 * Основной метод рендеринга компонента
 	 */
 	render(data?: Partial<FormData<TOrderDelivery>>): HTMLElement {
-		// Обновляем данные если они переданы
 		if (data) {
 			if (data.payment !== undefined) {
 				this.payment = data.payment;
@@ -207,14 +203,5 @@ export class OrderDeliveryView extends Component<FormData<TOrderDelivery>> {
 			}
 		}
 		return this.container;
-	}
-
-	/**
-	 * Метод для сброса формы
-	 */
-	reset(): void {
-		this.address = '';
-		this.payment = '';
-		this.validity = [];
 	}
 }

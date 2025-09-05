@@ -10,11 +10,11 @@ const DEFAULT_API_CONFIG: ApiConfig = {
 
 export class LarekApi implements ILarekApi {
 	protected _apiClient: IApi;
-  protected _config: ApiConfig;
+  protected _cdnUrl: string;
 
 	constructor(api: IApi, config: Partial<ApiConfig>) {
     this._apiClient = api;
-    this._config = { ...DEFAULT_API_CONFIG, ...config };
+    this._cdnUrl = { ...DEFAULT_API_CONFIG, ...config }.cdnUrl;
   }
 
   /**
@@ -24,10 +24,9 @@ export class LarekApi implements ILarekApi {
   async getProducts(): Promise<IProduct[]> {
     const response = await this._apiClient.get<ApiListResponse<IProduct>>('/product');
     
-    // Добавляем CDN_URL к изображениям и возвращаем массив товаров
     return response.items.map(product => ({
       ...product,
-      image: this._config.cdnUrl + product.image
+      image: this._cdnUrl + product.image // Добавляем CDN_URL к изображениям
     }));
   }
 

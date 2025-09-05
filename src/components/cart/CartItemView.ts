@@ -10,7 +10,6 @@ import { IEvents } from '../base/events';
  * Назначение: отображение товара в корзине с индексом позиции и кнопкой удаления
  */
 export class CartItemView extends Component<ICartItemData> {
-	// DOM элементы карточки товара в корзине
 	protected _indexElement: HTMLElement;
 	protected _titleElement: HTMLElement;
 	protected _priceElement: HTMLElement;
@@ -28,13 +27,13 @@ export class CartItemView extends Component<ICartItemData> {
 
 		const finalConfig = { ...DEFAULT_CART_ITEM_CONFIG, ...config };
 
-		// Находим все обязательные DOM элементы для карточки в корзине
+		// Обязательные элементы
 		this._indexElement = ensureElement(finalConfig.indexSelector, container);
 		this._titleElement = ensureElement(finalConfig.titleSelector, container);
 		this._priceElement = ensureElement(finalConfig.priceSelector, container);
 		this._removeButton = ensureElement(finalConfig.removeButtonSelector, container) as HTMLButtonElement;
 
-		// Обработчик клика по кнопке удаления
+		// Обработчики событий
 		this._removeButton.addEventListener('click', () => {
 			if (this._productId) {
 				this.events?.emit(CartEvent.ItemDeleteClicked, { id: this._productId });

@@ -1,4 +1,4 @@
-import { ICartViewData, CartViewConfig, ICartItemData, CartEvent } from '../../types';
+import { ICartViewData, CartViewConfig, ICartItemData, CartEvent, IComponentFactory } from '../../types';
 import { createElement, ensureElement, formatPrice } from '../../utils/utils';
 import { DEFAULT_CART_VIEW_CONFIG } from '../../utils/constants';
 import { Component } from '../base/Component';
@@ -10,13 +10,12 @@ import { IEvents } from '../base/events';
  * Назначение: отображение содержимого корзины с товарами, общей стоимостью и кнопкой оформления
  */
 export class CartView extends Component<ICartViewData> {
-	// DOM элементы корзины
 	protected _listContainer: HTMLElement;
 	protected _totalElement: HTMLElement;
 	protected _checkoutButton: HTMLButtonElement;
 
-	// Конфигурация компонента (сохраняется для itemFactory)
-	protected _config: CartViewConfig;
+	// Фабрика товаров в корзине 
+	protected _itemFactory: IComponentFactory<ICartItemData>;
 
 	constructor(
 		container: HTMLElement,
@@ -24,18 +23,19 @@ export class CartView extends Component<ICartViewData> {
 		config?: Partial<CartViewConfig>
 	) {
 		super(container, events);
-		this._config = { ...DEFAULT_CART_VIEW_CONFIG, ...config } as CartViewConfig;
+		const _config = { ...DEFAULT_CART_VIEW_CONFIG, ...config } as CartViewConfig;
+		this._itemFactory = _config.itemFactory;
 
-		if (!this._config.itemFactory) {
+		if (!_config.itemFactory) {
 			throw new Error('CartView: config.itemFactory not set. Provide correct itemFactory in configuration');
 		}
 
-		// Находим все обязательные DOM элементы
-		this._listContainer = ensureElement(this._config.listSelector, container);
-		this._totalElement = ensureElement(this._config.totalSelector, container);
-		this._checkoutButton = ensureElement(this._config.checkoutSelector, container) as HTMLButtonElement;
+		// Обязательные элементы
+		this._listContainer = ensureElement(_config.listSelector, container);
+		this._totalElement = ensureElement(_config.totalSelector, container);
+		this._checkoutButton = ensureElement(_config.checkoutSelector, container) as HTMLButtonElement;
 
-		// Обработчик клика по кнопке оформления
+		// Обработчики событий
 		this._checkoutButton.addEventListener('click', () => {
 			this.events?.emit(CartEvent.CheckoutClicked);
 		});
@@ -47,10 +47,10 @@ export class CartView extends Component<ICartViewData> {
 	 */
 	protected set items(cartItems: ICartItemData[]) {
     if(cartItems.length === 0) {
-      this._listContainer.replaceChildren(this._config.itemFactory.buildPlaceholder());
+      this._listContainer.replaceChildren(this._itemFactory.buildPlaceholder());
     } else {
       this._listContainer.replaceChildren(...cartItems.map(item => {
-			const itemView = this._config.itemFactory.build();
+			const itemView = this._itemFactory.build();
 			return itemView.render(item);
 		}));
     }

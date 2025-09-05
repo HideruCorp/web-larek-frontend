@@ -1,22 +1,22 @@
-import { IProduct, ProductGalleryViewConfig } from "../../types";
+import { IComponentFactory, IProduct, ProductGalleryViewConfig } from "../../types";
 import { Component } from "../base/Component";
 import { IEvents } from "../base/events";
 
 export class ProductGalleryView extends Component<IProduct[]> {
-  protected _config: ProductGalleryViewConfig;
+  protected _itemFactory: IComponentFactory<IProduct>;
   
   constructor(container: HTMLElement, events: IEvents, config: ProductGalleryViewConfig) {
     super(container, events);
-    this._config = config;
+    this._itemFactory = config.itemFactory;
 
-    if (!config.itemFactory) {
-      throw new Error('ProductGalleryView: _config.itemFactory not set. Provide correct itemFactory in configuration');
+    if (!this._itemFactory) {
+      throw new Error('ProductGalleryView: itemFactory not set. Provide correct itemFactory in configuration');
     }
   }
 
   protected set items(products: IProduct[]) {
     this.container.replaceChildren(...products.map(item => {
-      const itemView = this._config.itemFactory.build();
+      const itemView = this._itemFactory.build();
       return itemView.render(item);
   }));
   }

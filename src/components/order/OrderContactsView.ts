@@ -17,7 +17,6 @@ import { DEFAULT_ORDER_CONTACTS_CONFIG } from '../../utils/constants';
  * Наследуется от базового Component и работает с типом TOrderContacts.
  */
 export class OrderContactsView extends Component<FormData<TOrderContacts>> {
-	protected _config: OrderContactsViewConfig;
 	protected _formElement: HTMLFormElement;
 	protected _emailInput: HTMLInputElement;
 	protected _phoneInput: HTMLInputElement;
@@ -30,28 +29,28 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 		config?: Partial<OrderContactsViewConfig>
 	) {
 		super(container, events);
-		this._config = { ...DEFAULT_ORDER_CONTACTS_CONFIG, ...config };
+		const _config = { ...DEFAULT_ORDER_CONTACTS_CONFIG, ...config };
 
-		// Инициализируем элементы формы
+		// Обязательные элементы
 		this._formElement = this.container as HTMLFormElement;
 		this._emailInput = ensureElement<HTMLInputElement>(
-			this._config.emailInputSelector,
+			_config.emailInputSelector,
 			this.container
 		);
 		this._phoneInput = ensureElement<HTMLInputElement>(
-			this._config.phoneInputSelector,
+			_config.phoneInputSelector,
 			this.container
 		);
 		this._submitButton = ensureElement<HTMLButtonElement>(
-			this._config.submitButtonSelector,
+			_config.submitButtonSelector,
 			this.container
 		);
 		this._errorElement = ensureElement<HTMLElement>(
-			this._config.errorSelector,
+			_config.errorSelector,
 			this.container
 		);
 
-		// Устанавливаем обработчики событий
+		// Обработчики событий
 		this._setupEventListeners();
 	}
 
@@ -59,13 +58,11 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 	 * Настройка обработчиков событий
 	 */
 	protected _setupEventListeners(): void {
-		// Реактивная валидация при вводе email
+		// Реактивная валидация при вводе данных
 		this._emailInput.addEventListener('input', this._handleValidate.bind(this));
-
-		// Реактивная валидация при вводе телефона
 		this._phoneInput.addEventListener('input', this._handleValidate.bind(this));
 
-		// Обработка отправки формы
+		// Обработка кнопки "Оплатить"
 		this._formElement.addEventListener('submit', (e) => {
 			e.preventDefault();
 			this._handleSubmit();
@@ -73,10 +70,8 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 	}
 
 	protected _handleValidate(): void {
-		// Очищаем ошибки перед отправкой
 		this.validity = [];
 
-		// Отправляем событие для реактивной валидации
 		this.events?.emit(OrderEvent.ValidateRequest, {
 			step: OrderStep.Contacts,
 			data: this._getFormData(),
@@ -95,10 +90,8 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 	 * Обработка отправки формы
 	 */
 	protected _handleSubmit(): void {
-		// Очищаем ошибки перед отправкой
 		this.validity = [];
 
-		// Генерируем событие для финальной валидации и смены шага
 		this.events?.emit(OrderEvent.SubmitStep, {
 			step: OrderStep.Contacts,
 			data: this._getFormData(),
@@ -162,7 +155,6 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 	 * Основной метод рендеринга компонента
 	 */
 	render(data?: Partial<FormData<TOrderContacts>>): HTMLElement {
-		// Обновляем данные если они переданы
 		if (data) {
 			if (data.email !== undefined) {
 				this.email = data.email;
@@ -175,14 +167,5 @@ export class OrderContactsView extends Component<FormData<TOrderContacts>> {
 			}
 		}
 		return this.container;
-	}
-
-	/**
-	 * Метод для сброса формы
-	 */
-	reset(): void {
-		this.email = '';
-		this.phone = '';
-		this.validity = [];
 	}
 }

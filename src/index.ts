@@ -40,7 +40,12 @@ const larekApi = new LarekApi(new Api(API_URL), { cdnUrl: CDN_URL });
 const productCardFactory = new ProductViewFactory('#card-catalog', events);
 const cartItemFactory = new CartItemFactory('#card-basket', events);
 
-// Создаем экземпляры компонентов
+// Модели
+const productModel = new ProductModel(events);
+const cartModel = new CartModel(events);
+const orderModel = new OrderModel(events);
+
+// View компоненты
 const modal = new Modal(modalElement, events);
 const productDetailView = new ProductView(productDetailElement, events, {
 	itemSelectable: false,
@@ -49,12 +54,6 @@ const productGalleryView = new ProductGalleryView(galleryContainer, events, {
 	itemFactory: productCardFactory,
 });
 
-// Создаем модели
-const productModel = new ProductModel(events);
-const cartModel = new CartModel(events);
-const orderModel = new OrderModel(events);
-
-// Создаем view компоненты
 const cartIcon = new CartIcon(cartIconElement, events);
 const cartView = new CartView(cartContainer, events, {
 	itemFactory: cartItemFactory,
@@ -64,7 +63,6 @@ const orderDeliveryView = new OrderDeliveryView(orderDeliveryElement, events);
 const orderContactsView = new OrderContactsView(orderContactsElement, events);
 const orderSuccessView = new OrderSuccessView(successElement, events);
 
-// Создаем объект зависимостей для презентера
 const dependencies: IAppPresenterDependencies = {
 	events,
 	larekApi,
@@ -87,6 +85,6 @@ const dependencies: IAppPresenterDependencies = {
 	},
 };
 
-// Инициализируем презентер
+// Презентер
 const presenter = new AppPresenter(dependencies);
 presenter.loadInitialData();

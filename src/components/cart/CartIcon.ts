@@ -12,15 +12,13 @@ import { IEvents } from '../base/events';
 export class CartIcon extends Component<TCartInfo> {
   protected _counterElement: HTMLElement;
   
-  protected _config: CartIconConfig;
-
   constructor(container: HTMLElement, events?: IEvents, config?: Partial<CartIconConfig>) {
     super(container, events);
 
-    this._config = { ...DEFAULT_CART_ICON_CONFIG, ...config };
+    const _config = { ...DEFAULT_CART_ICON_CONFIG, ...config };
 
     // Обязательные элементы
-    this._counterElement = ensureElement(this._config.counterSelector, container);
+    this._counterElement = ensureElement(_config.counterSelector, container);
 
     // Обработчики событий
     this.container.addEventListener('click', () => {
