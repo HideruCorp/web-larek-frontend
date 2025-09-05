@@ -37,13 +37,13 @@ export class Modal extends Component<IModalData> {
 	}
 
 	open() {
-		this.container.classList.add(this._openedModifier);
+		this.toggleClass(this.container,this._openedModifier,true);
 		document.addEventListener('keyup', this.handleKeyQuit);
 		this.events.emit(ModalEvent.Opened);
 	}
 
 	close() {
-		this.container.classList.remove(this._openedModifier);
+		this.toggleClass(this.container,this._openedModifier,false);
 		document.removeEventListener('keyup', this.handleKeyQuit);
 		this.events.emit(ModalEvent.Closed);
 	}

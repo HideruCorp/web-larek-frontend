@@ -1,5 +1,5 @@
 import { ICartViewData, CartViewConfig, ICartItemData, CartEvent, IComponentFactory } from '../../types';
-import { createElement, ensureElement, formatPrice } from '../../utils/utils';
+import { ensureElement, formatPrice } from '../../utils/utils';
 import { DEFAULT_CART_VIEW_CONFIG } from '../../utils/constants';
 import { Component } from '../base/Component';
 import { IEvents } from '../base/events';

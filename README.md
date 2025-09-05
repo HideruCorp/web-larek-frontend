@@ -19,7 +19,7 @@
 
 Структура проекта:
 - src/ — исходные файлы проекта
-- src/components/ — папка с JS компонентами
+- src/components/ — папка с TS компонентами
 - src/components/base/ — папка с базовым кодом
 
 Важные файлы:
@@ -180,20 +180,14 @@ interface ICartViewData {
 type TCartInfo = Pick<ICartModel, 'count'>;
 ```
 
-Товары для оформления заказа - `TOrderItems`:
+Типы данных для конкретных шагов оформления заказа:
+- Товары для оформления заказа - `TOrderItems`
+- Данные по оплате и доставке товара при оформлении заказа - `TOrderDelivery`
+- Контактные данные получателя при оформлении заказа - `TOrderContacts`
+
 ```ts
 type TOrderItems = Pick<IOrderRequest, 'items' | 'total'>;
-```
-
-Данные по оплате и доставке товара при оформлении заказа - `TOrderDelivery`:
-
-```ts
 type TOrderDelivery = Pick<IOrderRequest, 'payment' | 'address'>;
-```
-
-Контактные данные получателя при оформлении заказа - `TOrderContacts`:
-
-```ts
 type TOrderContacts = Pick<IOrderRequest, 'email' | 'phone'>;
 ```
 
@@ -597,7 +591,7 @@ interface IOrderModel {
 
 ### Презентер
 
-Логика связывания слоев реализована в классе `AppPresenter` (`src/AppPresenter.ts`) и инициализируется в файле `src/index.ts` через систему событий.
+Логика связывания слоев реализована в классе `AppPresenter` (`src/components/AppPresenter.ts`) и инициализируется в файле `src/index.ts` через систему событий.
 
 #### Класс AppPresenter
 Основной класс презентера, который координирует взаимодействие между всеми компонентами приложения.

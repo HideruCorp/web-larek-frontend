@@ -2,7 +2,7 @@ import './scss/styles.scss';
 
 import { Api } from './components/base/api';
 import { API_URL, CDN_URL } from './utils/constants';
-import { AppPresenter } from './AppPresenter';
+import { AppPresenter } from './components/AppPresenter';
 import { CartIcon } from './components/cart/CartIcon';
 import { CartItemFactory } from './components/cart/CartItemFactory';
 import { CartModel } from './components/cart/CartModel';

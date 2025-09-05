@@ -26,9 +26,9 @@ import {
 	TOrderError,
 	TOrderSuccess,
 	ValidityState,
-} from './types';
-import { IEvents } from './components/base/events';
-import { pick, TypeFrom } from './utils/utils';
+} from '../types';
+import { IEvents } from './base/events';
+import { pick, TypeFrom } from '../utils/utils';
 
 export class AppPresenter {
 	private events: IEvents;
