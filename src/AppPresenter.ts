@@ -69,7 +69,6 @@ export class AppPresenter {
 		this.events.on(
 			ProductEvent.CardClicked,
 			(item: { id: TypeFrom<IProduct, 'id'> }) => {
-				console.log(`Получили клик по элементу с id: ${item.id}`);
 				if (this.modal.isOpened()) {
 					console.warn(
 						'При открытом модальном окне элементы галлереи не кликабельны'
@@ -83,7 +82,6 @@ export class AppPresenter {
 		this.events.on(
 			ProductEvent.ActionCalled,
 			(item: { id: TypeFrom<IProduct, 'id'> }) => {
-				console.log(`Кликнули по кнопке в превью: ${item.id}`);
 				if (!this.cartModel.hasProduct(item.id)) {
 					const cartItem: TCartItem = this.productModel.getProduct(item.id);
 					this.cartModel.addProduct(cartItem);
@@ -95,8 +93,6 @@ export class AppPresenter {
 
 		// Cart events
 		this.events.on(CartEvent.ItemsChanged, () => {
-			console.log(`Изменился список в корзине: ${this.cartModel.items}`);
-
 			this.cartIcon.render({ count: this.cartModel.count });
 
 			const cartItems: ICartItemData[] = this.cartModel.items.map(
@@ -117,9 +113,6 @@ export class AppPresenter {
 
 			this.cartView.render(cartData);
 
-			console.log(
-				`Корзина обновилась. selection: ${this.productModel.selection}`
-			);
 			if (this.productModel.selection !== null) {
 				const itemData = {
 					...this.productModel.getProduct(this.productModel.selection),
@@ -130,7 +123,6 @@ export class AppPresenter {
 		});
 
 		this.events.on(CartEvent.IconClicked, () => {
-			console.log('Открываем корзину');
 			if (this.modal.isOpened()) {
 				console.warn('Модальное окно уже занято');
 				return;
@@ -158,8 +150,6 @@ export class AppPresenter {
 		});
 
 		this.events.on(CartEvent.CheckoutClicked, () => {
-			console.log('Переходим к оформлению заказа');
-
 			this.orderModel.setOrderData(OrderStep.Cart, {
 				items: this.cartModel.items,
 				total: this.cartModel.totalCost,
@@ -170,14 +160,12 @@ export class AppPresenter {
 		this.events.on(
 			CartEvent.ItemDeleteClicked,
 			(item: { id: TypeFrom<IProduct, 'id'> }) => {
-				console.log(`Удаляем товар из корзины: ${item.id}`);
 				this.cartModel.removeProduct(item.id);
 			}
 		);
 
 		// Order events
 		this.events.on(OrderEvent.StepChanged, (data: { step: OrderStep }) => {
-			console.log(`Шаг заказа изменился на ${data.step}`);
 			switch (data.step) {
 				case OrderStep.Delivery: {
 					const orderDelivery = pick(
@@ -241,29 +229,23 @@ export class AppPresenter {
 		this.events.on(
 			OrderEvent.SubmitStep,
 			(data: { step: OrderStep; data: Partial<IOrderRequest> }) => {
-				console.log('Финальная валидация шага:', data);
 				this.orderModel.setOrderData(data.step, data.data);
 				this.orderModel.submitStep();
 			}
 		);
 
 		this.events.on(OrderEvent.SubmitOrderTransaction, () => {
-			console.log('Отправляем заказ:', this.orderModel.orderData);
-
 			this.larekApi
 				.sendOrder(this.orderModel.orderData)
 				.then((response) => {
-					console.log('Заказ успешно оформлен:', response);
 					this.orderModel.orderResponse = response;
 				})
 				.catch((error) => {
-					console.error('Ошибка оформления заказа:', error);
 					this.orderModel.orderResponse = { error };
 				});
 		});
 
 		this.events.on(OrderEvent.ValidationFailed, (validity: FieldValidity[]) => {
-			console.log('Валидация не прошла:', validity);
 
 			if (this.orderModel.currentStep === OrderStep.Delivery) {
 				this.orderDeliveryView.render({ validity });
@@ -303,7 +285,6 @@ export class AppPresenter {
 		});
 
 		this.events.on(OrderEvent.OrderFailed, () => {
-			console.log('Заказ провалился:');
 			const orderError = this.orderModel.orderResponse as TOrderError;
 			this.orderContactsView.render({
 				validity: [
@@ -317,7 +298,6 @@ export class AppPresenter {
 		});
 
 		this.events.on(OrderEvent.SuccessClose, () => {
-			console.log('Закрываем экран успешного заказа');
 			this.modal.close();
 			this.orderModel.reset();
 		});
@@ -333,9 +313,6 @@ export class AppPresenter {
 
 		// Gallery events
 		this.events.on(GalleryEvent.SelectionChanged, () => {
-			console.log(
-				`Изменился выбранный товар на ${this.productModel.selection}`
-			);
 			if (this.productModel.selection === null) return;
 			const itemData = {
 				...this.productModel.getProduct(this.productModel.selection),
@@ -346,7 +323,6 @@ export class AppPresenter {
 		});
 
 		this.events.on(GalleryEvent.ItemsChanged, () => {
-			console.log(`Список товаров обновился. Обновим галерею...`);
 			this.productGalleryView.render(this.productModel.items);
 		});
 	}

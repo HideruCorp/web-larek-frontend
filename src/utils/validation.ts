@@ -16,7 +16,6 @@ export function validateFields<
 >(schema: TSchema, data: Partial<T>, strict = false): FieldValidity[] {
 	const validity: FieldValidity[] = [];
 	// Валидируем только переданные поля
-	console.log(`Проверяем объект`, data);
 	for (const [key, value] of Object.entries(data)) {
 		if (!Object.keys(schema.entries).includes(key)) continue;
 		if (value === undefined) continue;
@@ -32,7 +31,6 @@ export function validateFields<
 			error: (valid.issues?.length ?? 0) > 0 ? valid.issues[0].message : '',
 		};
 		validity.push(fieldValidity);
-		console.log(`Результат проверки: ${key}:`, fieldValidity);
 	}
 
 	return validity;
