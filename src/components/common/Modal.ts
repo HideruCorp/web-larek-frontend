@@ -1,10 +1,10 @@
-import { IModalData, ModalConfig, ModalEvent } from '../../types';
+import { IModal, IModalData, ModalConfig, ModalEvent } from '../../types';
 import { DEFAULT_MODAL_CONFIG } from '../../utils/constants';
 import { ensureElement } from '../../utils/utils';
 import { Component } from '../base/Component';
 import { IEvents } from '../base/events';
 
-export class Modal extends Component<IModalData> {
+export class Modal extends Component<IModalData> implements IModal {
 	protected _contentContainer: HTMLElement;
 	protected _closeButton: HTMLButtonElement;
 	protected _openedModifier: string;
@@ -18,10 +18,7 @@ export class Modal extends Component<IModalData> {
 		const _config = { ...DEFAULT_MODAL_CONFIG, ...config };
 		this._openedModifier = _config.openedModifier;
 
-		this._contentContainer = ensureElement(
-			_config.contentSelector,
-			modalContainer
-		);
+		this._contentContainer = ensureElement(_config.contentSelector, modalContainer);
 		this._closeButton = ensureElement<HTMLButtonElement>(
 			_config.closeButtonSelector,
 			modalContainer
@@ -34,30 +31,30 @@ export class Modal extends Component<IModalData> {
 			}
 		});
 		this.handleKeyQuit = this.handleKeyQuit.bind(this);
+		this.addRenderField('content');
 	}
 
 	open() {
-		this.toggleClass(this.container,this._openedModifier,true);
+		this.toggleClass(this.container, this._openedModifier, true);
 		document.addEventListener('keyup', this.handleKeyQuit);
 		this.events.emit(ModalEvent.Opened);
 	}
 
 	close() {
-		this.toggleClass(this.container,this._openedModifier,false);
+		this.toggleClass(this.container, this._openedModifier, false);
 		document.removeEventListener('keyup', this.handleKeyQuit);
 		this.events.emit(ModalEvent.Closed);
 	}
 
-	isOpened() {
+	get isOpened(): boolean {
 		return this.container.classList.contains(this._openedModifier);
 	}
 
-	render(data?: Partial<IModalData>): HTMLElement {
-		this._contentContainer.replaceChildren(data.content);
-		return this.modalContainer;
+	protected set content(value: HTMLElement) {
+		this._contentContainer.replaceChildren(value);
 	}
 
-	handleKeyQuit(evt: KeyboardEvent) {
+	protected handleKeyQuit(evt: KeyboardEvent) {
 		if (evt.key === 'Escape') {
 			this.close();
 		}

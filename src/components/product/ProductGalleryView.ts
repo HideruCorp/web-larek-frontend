@@ -1,29 +1,35 @@
-import { IComponentFactory, IProduct, ProductGalleryViewConfig } from "../../types";
-import { Component } from "../base/Component";
-import { IEvents } from "../base/events";
+import {
+	IComponentFactory,
+	IGalleryViewData,
+	IProduct,
+	ProductGalleryViewConfig,
+} from '../../types';
+import { Component } from '../base/Component';
+import { IEvents } from '../base/events';
 
-export class ProductGalleryView extends Component<IProduct[]> {
-  protected _itemFactory: IComponentFactory<IProduct>;
-  
-  constructor(container: HTMLElement, events: IEvents, config: ProductGalleryViewConfig) {
-    super(container, events);
-    this._itemFactory = config.itemFactory;
+export class ProductGalleryView extends Component<IGalleryViewData> {
+	protected _itemFactory: IComponentFactory<IProduct>;
 
-    if (!this._itemFactory) {
-      throw new Error('ProductGalleryView: itemFactory not set. Provide correct itemFactory in configuration');
-    }
-  }
+	constructor(container: HTMLElement, events: IEvents, config: ProductGalleryViewConfig) {
+		super(container, events);
+		this._itemFactory = config.itemFactory;
 
-  protected set items(products: IProduct[]) {
-    this.container.replaceChildren(...products.map(item => {
-      const itemView = this._itemFactory.build();
-      return itemView.render(item);
-  }));
-  }
+		if (!this._itemFactory) {
+			throw new Error(
+				'ProductGalleryView: itemFactory not set. Provide correct itemFactory in configuration'
+			);
+		}
 
-  render(data?: Partial<IProduct[]>): HTMLElement {
-    this.items = data ?? [];
-    return this.container;
-  }
+		this.addRenderField('items');
+	}
 
+	protected set items(products: IProduct[]) {
+		console.log(products);
+		this.container.replaceChildren(
+			...products.map((item) => {
+				const itemView = this._itemFactory.build();
+				return itemView.render(item);
+			})
+		);
+	}
 }

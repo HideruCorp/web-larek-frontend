@@ -60,7 +60,7 @@ yarn build
 
 Товар - `IProduct`:
 
-```ts
+```typescript
 interface IProduct {
     id: string; // UUID идентификатор товара
     title: string; // Название товара
@@ -73,13 +73,13 @@ interface IProduct {
 
 Способ оплаты - `PaymentMethod`:
 
-```ts
+```typescript
 type PaymentMethod = 'card' | 'cash' | '';
 ```
 
 Заказ для отправки на сервер - `IOrderRequest`:
 
-```ts
+```typescript
 interface IOrderRequest {
     payment: PaymentMethod; // Способ оплаты
     address: string; // Адрес доставки
@@ -93,7 +93,8 @@ interface IOrderRequest {
 Типы ответа сервера при заказе:
 
 Успешный ответ - `TOrderSuccess`:
-```ts
+
+```typescript
 type TOrderSuccess = {
     id: string; // Id заказа
     total: number; // Общая сумма заказа
@@ -101,19 +102,22 @@ type TOrderSuccess = {
 ```
 
 Ошибка заказа - `TOrderError`:
-```ts
+
+```typescript
 type TOrderError = {
     error: string; // Сообщение об ошибке
 };
 ```
 
 Общий тип ответа - `IOrderResponse`:
-```ts
+
+```typescript
 type IOrderResponse = TOrderSuccess | TOrderError;
 ```
 
 API для работы с сервером веб-ларька - `ILarekApi`:
-```ts
+
+```typescript
 interface ILarekApi {
     getProducts(): Promise<IProduct[]>; // Получение каталога товаров
     sendOrder(orderData: IOrderRequest): Promise<IOrderResponse>; // Отправка заказа
@@ -122,7 +126,7 @@ interface ILarekApi {
 
 Галерея товаров на главной странице - `IProductModel`:
 
-```ts
+```typescript
 interface IProductModel {
     items: IProduct[]; // Массив товаров
     selection: TypeFrom<IProduct, 'id'> | null; // ID выбранного товара для модального окна
@@ -131,21 +135,37 @@ interface IProductModel {
 }
 ```
 
+Данные галереи товаров - `IGalleryViewData`:
+
+```typescript
+interface IGalleryViewData {
+    items: IProduct[]; // Массив товаров для отображения в галерее
+}
+```
+
 Данные товара для отображения в карточке - `IProductViewData`:
-```ts
+
+```typescript
 interface IProductViewData extends IProduct {
     inCart: boolean; // Находится ли товар в корзине
 }
 ```
 
+Базовые данные товара - `IBaseProductData`:
+
+```typescript
+type IBaseProductData = Pick<IProduct, 'id' | 'title' | 'price'>;
+```
+
 Данные товара для корзины - `TCartItem`:
-```ts
+
+```typescript
 type TCartItem = Pick<IProduct, 'id' | 'price'>;
 ```
 
 Корзина - `ICartModel`:
 
-```ts
+```typescript
 interface ICartModel {
     items: TypeFrom<IProduct, 'id'>[]; // Массив ID товаров в корзине
     totalCost: number; // Общая стоимость (вычисляемое поле)
@@ -160,14 +180,16 @@ interface ICartModel {
 ```
 
 Данные элемента корзины для отображения - `ICartItemData`:
-```ts
-interface ICartItemData extends Pick<IProduct, 'id' | 'title' | 'price'> {
+
+```typescript
+interface ICartItemData extends IBaseProductData {
     cartIndex: number; // Позиция товара в корзине (1, 2, 3...)
 }
 ```
 
 Данные корзины для отображения - `ICartViewData`:
-```ts
+
+```typescript
 interface ICartViewData {
     items: ICartItemData[]; // Массив товаров корзины с индексами
     totalCost: number; // Общая стоимость корзины
@@ -176,7 +198,8 @@ interface ICartViewData {
 ```
 
 Информация о корзине для иконки - `TCartInfo`:
-```ts
+
+```typescript
 type TCartInfo = Pick<ICartModel, 'count'>;
 ```
 
@@ -186,7 +209,7 @@ type TCartInfo = Pick<ICartModel, 'count'>;
 - Данные по оплате и доставке товара при оформлении заказа - `TOrderDelivery`
 - Контактные данные получателя при оформлении заказа - `TOrderContacts`
 
-```ts
+```typescript
 type TOrderItems = Pick<IOrderRequest, 'items' | 'total'>;
 type TOrderParameters = Omit<IOrderRequest, 'items' | 'total'>;
 type TOrderDelivery = Pick<IOrderRequest, 'payment' | 'address'>;
@@ -195,7 +218,7 @@ type TOrderContacts = Pick<IOrderRequest, 'email' | 'phone'>;
 
 Тип для события изменения полей формы заказа - `TOrderChangeRequest`:
 
-```ts
+```typescript
 type TOrderChangeRequest = {
     changedData: Partial<TOrderParameters>; // Изменившиеся поля
 };
@@ -203,7 +226,7 @@ type TOrderChangeRequest = {
 
 Шаги оформления заказа - `OrderStep`:
 
-```ts
+```typescript
 enum OrderStep {
     Cart = 'cart',           // Корзина, процесс оформления не начат
     Delivery = 'delivery',   // Выбор способа оплаты и адреса доставки
@@ -214,7 +237,8 @@ enum OrderStep {
 ```
 
 События галереи - `GalleryEvent`:
-```ts
+
+```typescript
 enum GalleryEvent {
     ItemsChanged = 'gallery:items:changed',
     SelectionChanged = 'gallery:selection:changed',
@@ -222,7 +246,8 @@ enum GalleryEvent {
 ```
 
 События товаров - `ProductEvent`:
-```ts
+
+```typescript
 enum ProductEvent {
     CardClicked = 'product:card:clicked',
     ActionCalled = 'product:action_button:clicked',
@@ -230,7 +255,8 @@ enum ProductEvent {
 ```
 
 События корзины - `CartEvent`:
-```ts
+
+```typescript
 enum CartEvent {
     ItemsChanged = 'cart:items:changed',
     IconClicked = 'cart:icon:clicked',
@@ -240,7 +266,8 @@ enum CartEvent {
 ```
 
 События модального окна - `ModalEvent`:
-```ts
+
+```typescript
 enum ModalEvent {
     Opened = 'modal:opened',
     Closed = 'modal:closed',
@@ -249,7 +276,7 @@ enum ModalEvent {
 
 Состояние валидации полей - `ValidityState`:
 
-```ts
+```typescript
 enum ValidityState {
     Invalid = 'invalid',     // При переходе в след шаг поле заполнено некорректно
     Incomplete = 'incomplete', // Поля частично заполнены
@@ -259,7 +286,7 @@ enum ValidityState {
 
 Валидность поля - `FieldValidity`:
 
-```ts
+```typescript
 type FieldValidity = {
     field: string;           // Имя поля
     state: ValidityState;    // Состояние валидации
@@ -269,7 +296,7 @@ type FieldValidity = {
 
 Данные формы с валидацией - `FormData<T>`:
 
-```ts
+```typescript
 type FormData<T> = T & {
     validity: FieldValidity[]; // Массив состояний валидации полей
 };
@@ -277,7 +304,7 @@ type FormData<T> = T & {
 
 Базовая конфигурация форм - `FormViewConfig`:
 
-```ts
+```typescript
 type FormViewConfig = {
     submitButtonSelector: string;   // Селектор кнопки отправки формы
     errorSelector?: string;         // Селектор элемента ошибок (опционально)
@@ -286,7 +313,7 @@ type FormViewConfig = {
 
 События модели заказа - `OrderEvent`:
 
-```ts
+```typescript
 enum OrderEvent {
     StepChanged = 'order:step:changed',           // Изменение текущего шага заказа
     DataChanged = 'order:request:changed',        // Обновление данных заказа
@@ -299,9 +326,27 @@ enum OrderEvent {
 }
 ```
 
+Интерфейс модального окна - `IModal`:
+
+```typescript
+interface IModal extends IComponent<IModalData> {
+    open(): void;
+    close(): void;
+    isOpened: boolean;
+}
+```
+
+Данные модального окна - `IModalData`:
+
+```typescript
+type IModalData = {
+    content: HTMLElement;
+};
+```
+
 Интерфейс модели заказа - `IOrderModel`:
 
-```ts
+```typescript
 interface IOrderModel {
     orderParameters: TOrderParameters;
     orderResponse: IOrderResponse | null;
@@ -437,6 +482,13 @@ interface IOrderModel {
 - `setDisabled(element: HTMLElement, state: boolean): void` - установка состояния disabled
 - `setImage(element: HTMLImageElement, src: string, alt?: string): void` - установка изображения
 
+**Система автоматического рендеринга полей:**
+- `addRenderField(property: string, dependencies?: FieldDependencies<T>): void` - регистрирует поле в реестре представления компонента для автоматического рендеринга
+- `applyRegisteredFields(data: Partial<T>): void` - задает новые данные в зарегистрированные поля
+- `render(data?: Partial<T>): HTMLElement` - базовый рендер с автоматическим обновлением зарегистрированных полей
+
+Система позволяет компонентам автоматически обновлять свои поля при вызове `render()`, избегая необходимости явного вызова сеттеров в каждом компоненте.
+
 #### Базовый класс FormComponent<T>
 Абстрактный класс для всех форм приложения. Наследуется от `Component<FormData<T>>` и предоставляет общую логику управления формами с валидацией.
 
@@ -448,8 +500,6 @@ interface IOrderModel {
 - `_submitButton: HTMLButtonElement` - кнопка отправки формы
 
 **Основные методы:**
-- `render(data?: Partial<FormData<T>>): HTMLElement` - базовый метод рендеринга, обрабатывает валидацию и вызывает `renderForm` наследного класса.
-- `protected abstract renderForm(data: Partial<T>): HTMLElement` - абстрактный метод для рендеринга конкретной формы
 - `protected abstract onSubmit(): void` - абстрактный метод обработки отправки формы
 - `protected set validity(validity: FieldValidity[]): void` - обработка результатов валидации, управление состоянием кнопки и отображением ошибок
 
@@ -459,42 +509,53 @@ interface IOrderModel {
 - Активирует кнопку отправки только когда все поля валидны
 
 **Принцип использования:**
-- Наследующие классы должны реализовать `renderForm` для  рендеринга данных формы и `onSubmit` для обработки отправки формы
+- Наследующие классы должны реализовать `onSubmit` для обработки отправки формы
 - Класс автоматически обрабатывает события `submit` формы с предотвращением стандартного поведения
+- Регистрирует в реестре представления компонента поле `validity`
 
 #### Класс Modal
-Компонент модального окна для отображения различного контента.
+Компонент модального окна для отображения различного контента. Реализует интерфейс `IModal`.
 
 **Наследуется от:** `Component<IModalData>`
 
 **Основные методы:**
 - `open(): void` - открывает модальное окно
 - `close(): void` - закрывает модальное окно
-- `isOpened(): boolean` - проверяет, открыто ли модальное окно
-- `render(data?: Partial<IModalData>): HTMLElement` - обновляет содержимое модального окна
+- `get isOpened(): boolean` - геттер, проверяющий открыто ли модальное окно
+- `protected set content(value: HTMLElement): void` - устанавливает содержимое модального окна
 
 **Генерируемые события:**
 - `modal:opened` - при открытии модального окна
 - `modal:closed` - при закрытии модального окна
 
-#### Класс ProductView
-Компонент для отображения карточки товара.
+**Рендеринг:** 
+- Регистрирует в реестре представления компонента поле `content`
 
-**Наследуется от:** `Component<IProductViewData>`
+#### Класс BaseProductView<T>
+Абстрактный базовый класс для отображения данных товара. Предоставляет общую функциональность для всех компонентов товаров.
 
-**Принимаемые данные:** Объект типа `IProductViewData` (расширенный `IProduct` с полем `inCart: boolean`)
+**Наследуется от:** `Component<T extends IBaseProductData>`
 
 **Основные сеттеры (protected):**
 - `set id(value: string)` - устанавливает ID товара для использования в событиях
 - `set title(value: string)` - устанавливает название товара
+- `set price(value: number | null)` - устанавливает цену (или "Бесценно")
+
+**Использование системы автоматического рендеринга:**
+- Регистрирует в реестре представления компонента поля `id` (не имеет визуального отображения), `title`, `price`
+
+#### Класс ProductView
+Компонент для отображения карточки товара.
+
+**Наследуется от:** `BaseProductView<IProductViewData>`
+
+**Принимаемые данные:** Объект типа `IProductViewData` (расширенный `IProduct` с полем `inCart: boolean`)
+
+**Основные сеттеры (protected):**
 - `set description(value: string)` - устанавливает описание товара
 - `set image(value: string)` - устанавливает изображение товара
-- `set price(value: number | null)` - устанавливает цену (или "Бесценно")
 - `set category(value: string)` - устанавливает категорию с соответствующим цветом
 - `set inCart(value: Pick<IProductViewData, 'inCart' | 'price'>)` - управляет состоянием кнопки (В корзину/Удалить/Недоступно)
-
-**Основные методы:**
-- `render(data?: Partial<IProductViewData>): HTMLElement` - обновляет компонент данными товара и возвращает DOM элемент
 
 **Генерируемые события:**
 - `product:action_button:clicked` - при клике на кнопку действия (Купить/Убрать)
@@ -502,10 +563,15 @@ interface IOrderModel {
 #### Класс ProductGalleryView
 Компонент для отображения галереи товаров на главной странице.
 
-**Наследуется от:** `Component<IProduct[]>`
+**Наследуется от:** `Component<IGalleryViewData>`
 
-**Основные методы:**
-- `render(data?: Partial<IProduct[]>): HTMLElement` - отрисовывает список товаров в галерее
+**Принимаемые данные:** Объект типа `IGalleryViewData`
+
+**Основные сеттеры (protected):**
+- `set items(products: IProduct[])` - устанавливает список товаров в галерее, создавая для каждого элемент через фабрику
+
+**Рендеринг:** 
+- Регистрирует в реестре представления компонента поле `items`
 
 #### Класс CartIcon
 Компонент иконки корзины в шапке сайта с счетчиком товаров.
@@ -517,8 +583,8 @@ interface IOrderModel {
 **Основные сеттеры (protected):**
 - `set count(value: number)` - устанавливает количество товаров в счетчике корзины
 
-**Основные методы:**
-- `render(data?: Partial<TCartInfo>): HTMLElement` - обновляет компонент данными счетчика и возвращает DOM элемент
+**Рендеринг:** 
+- Регистрирует в реестре представления компонента поле `count`
 
 **Генерируемые события:**
 - `cart:icon:clicked` - при клике на иконку корзины
@@ -526,18 +592,15 @@ interface IOrderModel {
 #### Класс CartItemView
 Компонент для отображения элемента корзины (товара в списке корзины).
 
-**Наследуется от:** `Component<ICartItemData>`
+**Наследуется от:** `BaseProductView<ICartItemData>`
 
 **Принимаемые данные:** Объект типа `ICartItemData` (содержит `id`, `title`, `price`, `cartIndex`)
 
-**Основные сеттеры (protected):**
-- `set id(value: string)` - устанавливает ID товара для использования в событиях
-- `set title(value: string)` - устанавливает название товара
-- `set price(value: number | null)` - устанавливает цену товара
+**Дополнительные сеттеры (protected):**
 - `set cartIndex(value: number)` - устанавливает позицию товара в корзине (1, 2, 3...)
 
-**Основные методы:**
-- `render(data?: Partial<ICartItemData>): HTMLElement` - обновляет компонент данными элемента корзины и возвращает DOM элемент
+**Рендеринг:** 
+- Дополнительно регистрирует в реестре представления компонента поле `cartIndex` (наследует базовые поля от `BaseProductView`)
 
 **Генерируемые события:**
 - `cart:item:delete_clicked` - при клике на кнопку удаления товара из корзины
@@ -554,8 +617,8 @@ interface IOrderModel {
 - `set totalCost(value: number)` - устанавливает общую стоимость корзины
 - `set isEmpty(value: boolean)` - управляет состоянием кнопки оформления (активна только при наличии товаров)
 
-**Основные методы:**
-- `render(data?: Partial<ICartViewData>): HTMLElement` - обновляет компонент данными корзины и возвращает DOM элемент
+**Рендеринг:** 
+- Регистрирует в реестре представления компонента поля `items`, `totalCost`, `isEmpty`
 
 **Генерируемые события:**
 - `cart:checkout:clicked` - при клике на кнопку "Оформить"
@@ -626,8 +689,8 @@ interface IOrderModel {
 **Основные сеттеры (protected):**
 - `set total(value: number)` - устанавливает общую сумму заказа в формате "Списано X синансов"
 
-**Основные методы:**
-- `render(data?: Partial<TOrderSuccess>): HTMLElement` - обновляет компонент данными успешного заказа и возвращает DOM элемент
+**Рендеринг:** 
+- Регистрирует в реестре представления компонента поле `total`
 
 **Генерируемые события:**
 - `order:success:close_clicked` - при клике на кнопку закрытия экрана успеха

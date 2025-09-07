@@ -1,5 +1,6 @@
 import { 
-  CartIconConfig, 
+  CartIconConfig,
+  BaseProductViewConfig,
   ProductViewConfig, 
   CartItemViewConfig, 
   CartViewConfig, 
@@ -25,14 +26,18 @@ export const DEFAULT_FORM_CONFIG: FormViewConfig = {
 	errorSelector: '.form__errors',
 };
 
+export const DEFAULT_BASE_PRODUCT_CONFIG: BaseProductViewConfig = {
+	titleSelector: '.card__title',
+	priceSelector: '.card__price',
+};
+
 export const DEFAULT_ITEM_VIEW_CONFIG: ProductViewConfig = {
   itemSelectable: true,
   domSelectors: {
+    ...DEFAULT_BASE_PRODUCT_CONFIG,
     categorySelector: '.card__category',
-    titleSelector: '.card__title', 
     descriptionSelector: '.card__text',
     imageSelector: '.card__image',
-    priceSelector: '.card__price',
     actionButtonSelector: '.card__button'
   },
   categoryClassMap: {
@@ -49,9 +54,8 @@ export const DEFAULT_CART_ICON_CONFIG: CartIconConfig = {
 };
 
 export const DEFAULT_CART_ITEM_CONFIG: CartItemViewConfig = {
+  ...DEFAULT_BASE_PRODUCT_CONFIG,
   indexSelector: '.basket__item-index',
-  titleSelector: '.card__title',
-  priceSelector: '.card__price',
   removeButtonSelector: '.basket__item-delete'
 };
 

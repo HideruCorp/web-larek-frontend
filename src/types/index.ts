@@ -62,14 +62,19 @@ export interface IProductModel {
 	getProduct(productId: TypeFrom<IProduct, 'id'>): IProduct | null;
 }
 
+export interface IGalleryViewData {
+	items: IProduct[];
+}
+
 export interface IProductViewData extends IProduct {
 	inCart: boolean;
 }
 
+export type IBaseProductData = Pick<IProduct, 'id' | 'title' | 'price'>;
+
 export type TCartItem = Pick<IProduct, 'id' | 'price'>;
 
-export interface ICartItemData
-	extends Pick<IProduct, 'id' | 'title' | 'price'> {
+export interface ICartItemData extends IBaseProductData {
 	cartIndex: number; // Позиция в корзине
 }
 
@@ -117,11 +122,10 @@ export type IModalData = {
 	content: HTMLElement;
 };
 
-export interface IModal {
-	render(data: IModalData): HTMLElement;
+export interface IModal extends IComponent<IModalData> {
+	isOpened: boolean;
 	open(): void;
 	close(): void;
-	isOpened(): boolean;
 }
 
 export type ModalConfig = {
@@ -139,6 +143,11 @@ export enum ProductEvent {
 	CardClicked = 'product:card:clicked',
 	ActionCalled = 'product:action_button:clicked',
 }
+
+export type BaseProductViewConfig = {
+	titleSelector: string;
+	priceSelector: string;
+};
 
 export type ProductViewConfig = {
 	itemSelectable: boolean;
@@ -212,7 +221,7 @@ export type FormData<T> = T & {
 export type FormViewConfig = {
 	submitButtonSelector: string;
 	errorSelector?: string;
-}
+};
 
 export enum OrderStep {
 	Cart = 'cart',
@@ -269,7 +278,7 @@ export interface IAppPresenterDependencies {
 	modal: IModal;
 	product: {
 		productModel: IProductModel;
-		productGalleryView: IComponent<IProduct[]>;
+		productGalleryView: IComponent<IGalleryViewData>;
 		productDetailView: IComponent<IProductViewData>;
 	};
 	cart: {

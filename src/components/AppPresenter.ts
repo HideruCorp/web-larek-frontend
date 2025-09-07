@@ -27,6 +27,7 @@ import {
 	TOrderSuccess,
 	TOrderChangeRequest,
 	ValidityState,
+	IGalleryViewData,
 } from '../types';
 import { IEvents } from './base/events';
 import { pick, TypeFrom } from '../utils/utils';
@@ -36,7 +37,7 @@ export class AppPresenter {
 	private larekApi: ILarekApi;
 	private modal: IModal;
 	private productDetailView: IComponent<IProductViewData>;
-	private productGalleryView: IComponent<IProduct[]>;
+	private productGalleryView: IComponent<IGalleryViewData>;
 	private productModel: IProductModel;
 	private cartModel: ICartModel;
 	private orderModel: IOrderModel;
@@ -78,22 +79,17 @@ export class AppPresenter {
 		});
 
 		this.events.on(GalleryEvent.ItemsChanged, () => {
-			this.productGalleryView.render(this.productModel.items);
+			this.productGalleryView.render({ items: this.productModel.items });
 		});
 
 		// События карточки
-		this.events.on(
-			ProductEvent.CardClicked,
-			(item: { id: TypeFrom<IProduct, 'id'> }) => {
-				if (this.modal.isOpened()) {
-					console.warn(
-						'При открытом модальном окне элементы галлереи не кликабельны'
-					);
-					return;
-				}
-				this.productModel.selection = item.id;
+		this.events.on(ProductEvent.CardClicked, (item: { id: TypeFrom<IProduct, 'id'> }) => {
+			if (this.modal.isOpened) {
+				console.warn('При открытом модальном окне элементы галлереи не кликабельны');
+				return;
 			}
-		);
+			this.productModel.selection = item.id;
+		});
 
 		this.events.on(
 			ProductEvent.ActionCalled,
@@ -111,15 +107,13 @@ export class AppPresenter {
 		this.events.on(CartEvent.ItemsChanged, () => {
 			this.cartIcon.render({ count: this.cartModel.count });
 
-			const cartItems: ICartItemData[] = this.cartModel.items.map(
-				(productId, index) => {
-					const product = this.productModel.getProduct(productId);
-					return {
-						...product,
-						cartIndex: index + 1,
-					} as ICartItemData;
-				}
-			);
+			const cartItems: ICartItemData[] = this.cartModel.items.map((productId, index) => {
+				const product = this.productModel.getProduct(productId);
+				return {
+					...product,
+					cartIndex: index + 1,
+				} as ICartItemData;
+			});
 
 			const cartData: ICartViewData = {
 				items: cartItems,
@@ -139,21 +133,19 @@ export class AppPresenter {
 		});
 
 		this.events.on(CartEvent.IconClicked, () => {
-			if (this.modal.isOpened()) {
+			if (this.modal.isOpened) {
 				console.warn('Модальное окно уже занято');
 				return;
 			}
 			this.productModel.selection = null;
 
-			const cartItems: ICartItemData[] = this.cartModel.items.map(
-				(productId, index) => {
-					const product = this.productModel.getProduct(productId);
-					return {
-						...product,
-						cartIndex: index + 1,
-					} as ICartItemData;
-				}
-			);
+			const cartItems: ICartItemData[] = this.cartModel.items.map((productId, index) => {
+				const product = this.productModel.getProduct(productId);
+				return {
+					...product,
+					cartIndex: index + 1,
+				} as ICartItemData;
+			});
 
 			const cartData: ICartViewData = {
 				items: cartItems,
@@ -196,11 +188,7 @@ export class AppPresenter {
 				}
 
 				case OrderStep.Contacts: {
-					const orderContacts = pick(
-						this.orderModel.orderParameters,
-						'email',
-						'phone'
-					);
+					const orderContacts = pick(this.orderModel.orderParameters, 'email', 'phone');
 					const contactsData = {
 						...orderContacts,
 						validity: this.orderModel.validate(orderContacts),
@@ -274,11 +262,7 @@ export class AppPresenter {
 				}
 
 				case OrderStep.Contacts: {
-					const orderDelivery = pick(
-						this.orderModel.orderParameters,
-						'email',
-						'phone'
-					);
+					const orderDelivery = pick(this.orderModel.orderParameters, 'email', 'phone');
 					this.orderContactsView.render({
 						...orderDelivery,
 						validity: this.orderModel.validate(orderDelivery),

@@ -1,12 +1,7 @@
 import { Component } from './Component';
-import {
-	ValidityState,
-	FieldValidity,
-	FormData,
-	FormViewConfig,
-} from '../../types';
+import { ValidityState, FieldValidity, FormData, FormViewConfig } from '../../types';
 import { IEvents } from './events';
-import { ensureElement, omit } from '../../utils/utils';
+import { ensureElement } from '../../utils/utils';
 import { DEFAULT_FORM_CONFIG } from '../../utils/constants';
 
 export abstract class FormComponent<T> extends Component<FormData<T>> {
@@ -38,12 +33,12 @@ export abstract class FormComponent<T> extends Component<FormData<T>> {
 			e.preventDefault();
 			this.onSubmit();
 		});
+
+		this.addRenderField('validity');
 	}
 
 	protected set validity(validity: FieldValidity[]) {
-		const invalid = validity.filter(
-			(field) => field.state === ValidityState.Invalid
-		);
+		const invalid = validity.filter((field) => field.state === ValidityState.Invalid);
 		if (invalid.length > 0) {
 			if (this._errorElement) {
 				this.setText(this._errorElement, invalid.shift().error);
@@ -66,16 +61,5 @@ export abstract class FormComponent<T> extends Component<FormData<T>> {
 		}
 	}
 
-	render(data?: Partial<FormData<T>>): HTMLElement {
-		if (!data) return this.container;
-		if (data.validity) this.validity = data.validity;
-		if (Object.keys(omit(data, 'validity')).length > 0) {
-			return this.renderForm(data);
-		} else {
-			return this.container;
-		}
-	}
-
 	protected abstract onSubmit(): void;
-	protected abstract renderForm(data: Partial<T>): HTMLElement;
 }

@@ -6,47 +6,39 @@ import { IEvents } from '../base/events';
 
 /**
  * Компонент иконки корзины в шапке сайта
- * 
+ *
  * Назначение: отображение счетчика товаров в корзине и обработка клика для открытия корзины
  */
 export class CartIcon extends Component<TCartInfo> {
-  protected _counterElement: HTMLElement;
-  
-  constructor(container: HTMLElement, events?: IEvents, config?: Partial<CartIconConfig>) {
-    super(container, events);
+	protected _counterElement: HTMLElement;
 
-    const _config = { ...DEFAULT_CART_ICON_CONFIG, ...config };
+	constructor(
+		container: HTMLElement,
+		events?: IEvents,
+		config?: Partial<CartIconConfig>
+	) {
+		super(container, events);
 
-    // Обязательные элементы
-    this._counterElement = ensureElement(_config.counterSelector, container);
+		const _config = { ...DEFAULT_CART_ICON_CONFIG, ...config };
 
-    // Обработчики событий
-    this.container.addEventListener('click', () => {
-      this.events?.emit(CartEvent.IconClicked);
-    });
-  }
+		// Обязательные элементы
+		this._counterElement = ensureElement(_config.counterSelector, container);
 
-  /**
-   * Сеттер для количества товаров в корзине
-   * Обновляет только текстовое содержимое счетчика
-   * 
-   * @param value - количество товаров в корзине
-   */
-  protected set count(value: number) {
-    this.setText(this._counterElement, value.toString());
-  }
+		// Обработчики событий
+		this.container.addEventListener('click', () => {
+			this.events?.emit(CartEvent.IconClicked);
+		});
 
-  /**
-   * Рендер компонента с данными корзины
-   * Явно вызывает защищенные сеттеры для безопасности типов
-   *
-   * @param data - Данные корзины для обновления
-   * @returns DOM элемент кнопки корзины
-   */
-  render(data?: Partial<TCartInfo>): HTMLElement {
-    if (data?.count !== undefined) {
-      this.count = data.count;
-    }
-    return this.container;
-  }
+		this.addRenderField('count');
+	}
+
+	/**
+	 * Сеттер для количества товаров в корзине
+	 * Обновляет только текстовое содержимое счетчика
+	 *
+	 * @param value - количество товаров в корзине
+	 */
+	protected set count(value: number) {
+		this.setText(this._counterElement, value.toString());
+	}
 }

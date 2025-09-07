@@ -1,7 +1,7 @@
 import { IProductViewData, ProductEvent, ProductViewConfig } from '../../types';
 import { DEFAULT_ITEM_VIEW_CONFIG } from '../../utils/constants';
-import { ensureElement, formatPrice } from '../../utils/utils';
-import { Component } from '../base/Component';
+import { ensureElement } from '../../utils/utils';
+import { BaseProductView } from './BaseProductView';
 import { IEvents } from '../base/events';
 
 /**
@@ -9,19 +9,14 @@ import { IEvents } from '../base/events';
  *
  * Назначение: отображение товара в виде карточки в галерее на главной странице
  */
-export class ProductView extends Component<IProductViewData> {
+export class ProductView extends BaseProductView<IProductViewData> {
 	protected _categoryElement: HTMLElement;
-	protected _titleElement: HTMLElement;
 	protected _descriptionElement: HTMLElement | null;
 	protected _imageElement: HTMLImageElement;
-	protected _priceElement: HTMLElement;
 	protected _addToCartButton: HTMLButtonElement | null;
 
 	// Маппинг категорий
 	protected _categoryClassMap: Record<string,string>;
-
-	// Хранимые данные (только для событий)
-	protected _productId: string;
 
 	constructor(
 		container: HTMLElement,
@@ -39,12 +34,10 @@ export class ProductView extends Component<IProductViewData> {
 			domSelectors.categorySelector,
 			container
 		);
-		this._titleElement = ensureElement(domSelectors.titleSelector, container);
 		this._imageElement = ensureElement(
 			domSelectors.imageSelector,
 			container
 		) as HTMLImageElement;
-		this._priceElement = ensureElement(domSelectors.priceSelector, container);
 
 		// Необязательные элементы
 		this._descriptionElement = container.querySelector(
@@ -73,27 +66,17 @@ export class ProductView extends Component<IProductViewData> {
 				}
 			});
 		}
+
+		// Регистрация полей - простые поля (1:1)
+		this.addRenderField('description');
+		this.addRenderField('category');
+		this.addRenderField('image');
+		
+		// Составное поле для кнопки (1:N) - зависит от inCart и price
+		this.addRenderField('buttonState', ['inCart', 'price']);
 	}
 
-	/**
-	 * Сеттер для ID товара
-	 * Сохраняет ID для использования в событиях
-	 */
-	protected set id(value: string) {
-		this._productId = value;
-	}
 
-	protected get id(): string {
-		return this._productId;
-	}
-
-	/**
-	 * Сеттер для названия товара
-	 * Обновляет только текстовое содержимое заголовка
-	 */
-	protected set title(value: string) {
-		this.setText(this._titleElement, value);
-	}
 
 	/**
 	 * Сеттер для описания товара
@@ -135,10 +118,11 @@ export class ProductView extends Component<IProductViewData> {
 	}
 
 	/**
-	 * Сеттер для состояния корзины
+	 * Сеттер для состояния кнопки
 	 * Обновляет текст и состояние кнопки действия
+	 * Автоматически получает объект с полями inCart и price
 	 */
-	protected set inCart(value: Pick<IProductViewData, 'inCart' | 'price'>) {
+	protected set buttonState(value: Pick<IProductViewData, 'inCart' | 'price'>) {
 		if (this._addToCartButton) {
 			if (value.price === null) {
 				this.setText(this._addToCartButton, 'Недоступно');
@@ -153,36 +137,5 @@ export class ProductView extends Component<IProductViewData> {
 		}
 	}
 
-	/**
-	 * Сеттер для цены товара
-	 * Обрабатывает как числовые значения, так и null (бесценные товары)
-	 */
-	protected set price(value: number | null) {
-		if (value === null) {
-			this.setText(this._priceElement, 'Бесценно');
-		} else {
-			this.setText(this._priceElement, `${formatPrice(value)} синапсов`);
-		}
-	}
 
-	/**
-	 * Рендер компонента с данными товара
-	 * Явно вызывает защищенные сеттеры для безопасности типов
-	 *
-	 * @param data - Частичные данные товара для обновления
-	 * @returns DOM элемент карточки
-	 */
-	render(data?: Partial<IProductViewData>): HTMLElement {
-		if (data) {
-			if (data.id !== undefined) this.id = data.id;
-			if (data.title !== undefined) this.title = data.title;
-			if (data.description !== undefined) this.description = data.description;
-			if (data.category !== undefined) this.category = data.category;
-			if (data.image !== undefined) this.image = data.image;
-			if (data.price !== undefined) this.price = data.price;
-			if (data.inCart !== undefined)
-				this.inCart = { inCart: data.inCart, price: data.price };
-		}
-		return this.container;
-	}
 }
