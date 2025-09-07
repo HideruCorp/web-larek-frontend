@@ -24,7 +24,6 @@ export class ProductGalleryView extends Component<IGalleryViewData> {
 	}
 
 	protected set items(products: IProduct[]) {
-		console.log(products);
 		this.container.replaceChildren(
 			...products.map((item) => {
 				const itemView = this._itemFactory.build();
