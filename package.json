@@ -41,8 +41,7 @@
     "start": "webpack serve",
     "lint": "eslint --ext .js,.ts ./src",
     "lint:fix": "npm run lint -- --fix",
-    "format": "prettier ./src --write",
-    "deploy": "gh-pages -d dist"
+    "format": "prettier ./src --write"
   },
   "dependencies": {
     "valibot": "^1.1.0"
