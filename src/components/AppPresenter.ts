@@ -138,22 +138,7 @@ export class AppPresenter {
 				return;
 			}
 			this.productModel.selection = null;
-
-			const cartItems: ICartItemData[] = this.cartModel.items.map((productId, index) => {
-				const product = this.productModel.getProduct(productId);
-				return {
-					...product,
-					cartIndex: index + 1,
-				} as ICartItemData;
-			});
-
-			const cartData: ICartViewData = {
-				items: cartItems,
-				totalCost: this.cartModel.totalCost,
-				isEmpty: this.cartModel.isEmpty,
-			};
-
-			this.modal.render({ content: this.cartView.render(cartData) });
+			this.modal.render({ content: this.cartView.render() });
 			this.modal.open();
 		});
 
